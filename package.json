@@ -1,6 +1,6 @@
 {
-  "name": "zbox",
-  "version": "0.1.0",
+  "name": "zbox-cli",
+  "version": "0.1.0-beta.3",
   "description": "A collection of utility tools for file/git operations, and more",
   "main": "src/index.js",
   "bin": {
@@ -17,7 +17,6 @@
     "lint": "eslint src --ext .js",
     "lint:fix": "eslint src --ext .js --fix",
     "format": "prettier --write \"src/**/*.js\"",
-    "prepublishOnly": "npm run test && npm run lint",
     "release": "npm publish"
   },
   "keywords": [
