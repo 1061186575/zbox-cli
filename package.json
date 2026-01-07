@@ -1,52 +1,54 @@
 {
-  "name": "zbox-cli",
-  "version": "0.1.0-beta.5",
-  "description": "A collection of utility tools for file/git operations, and more",
-  "main": "src/index.js",
-  "bin": {
-    "zbox": "bin/zbox.js"
-  },
-  "files": [
-    "src",
-    "bin",
-    "README.md"
-  ],
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "lint": "eslint src --ext .js",
-    "lint:fix": "eslint src --ext .js --fix",
-    "format": "prettier --write \"src/**/*.js\"",
-    "release": "npm publish"
-  },
-  "keywords": [
-    "utils",
-    "utilities",
-    "tools",
-    "file-encryption",
-    "git-operations",
-    "batch-operations",
-    "cli-tools"
-  ],
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "eslint": "^9.39.2",
-    "jest": "^30.2.0",
-    "prettier": "^3.7.4"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "bugs": {
-    "url": ""
-  },
-  "homepage": "",
-  "dependencies": {
-    "commander": "^14.0.2"
-  }
+    "name": "zbox-cli",
+    "version": "0.1.0-beta.5",
+    "description": "A collection of utility tools for file/git operations, and more",
+    "main": "src/index.js",
+    "bin": {
+        "zbox": "bin/zbox.js"
+    },
+    "scripts": {
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "lint": "eslint src --ext .js",
+        "lint:fix": "eslint src --ext .js --fix",
+        "format": "prettier --write \"src/**/*.js\"",
+        "release": "npm publish"
+    },
+    "dependencies": {
+        "commander": "^14.0.2",
+        "axios": "^1.4.0",
+        "m3u8-parser": "^7.0.0"
+    },
+    "devDependencies": {
+        "eslint": "^9.39.2",
+        "jest": "^30.2.0",
+        "prettier": "^3.7.4"
+    },
+    "files": [
+        "src",
+        "bin",
+        "README.md"
+    ],
+    "keywords": [
+        "utils",
+        "utilities",
+        "tools",
+        "file-encryption",
+        "git-operations",
+        "batch-operations",
+        "cli-tools"
+    ],
+    "author": "",
+    "license": "MIT",
+    "engines": {
+        "node": ">=20"
+    },
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "bugs": {
+        "url": ""
+    },
+    "homepage": ""
 }

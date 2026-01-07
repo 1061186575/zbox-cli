@@ -4,6 +4,7 @@ const { readFileSync } = require('fs');
 
 require('./git');
 require('./ke');
+require('./file');
 
 // 启动一个 Node.js http 服务
 program
