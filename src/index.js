@@ -19,10 +19,10 @@ program
 program
     .command('scp')
     .option('-c, --config <configPath>', '指定配置文件路径', './publishConfig.js')
-    .option('-g, --gitCommitCheck <gitCommitCheck>', '上传之前检查 git commit 状态', false)
+    .option('-g, --gitCommitCheck', '上传之前检查 git commit 状态', false)
     .option('-p, --printDemoConfig', '打印配置示例')
     .description('使用 scp 命令复制文件到服务器\n1.支持增量上传\n2.支持上传前检查 git 状态')
-    .action((options) => {
+    .action(options => {
         if (options.printDemoConfig) {
             const demoConfigPath = path.join(__dirname, './command/scp/demo/publishConfig.js')
             console.log('demoConfigPath', demoConfigPath);

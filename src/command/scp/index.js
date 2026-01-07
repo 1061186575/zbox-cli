@@ -38,7 +38,6 @@ async function main(configFilePath, gitCommitCheck) {
 
 }
 
-
 function writeVersion(versionFile, localDist) {
     let writePath = path.join(localDist, versionFile)
     let writeDirPath = path.parse(writePath).dir
