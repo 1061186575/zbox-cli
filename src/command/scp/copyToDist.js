@@ -1,22 +1,37 @@
 const fs = require('fs')
 const path = require('path')
-const { calcFileMD5Change } = require("./calcFileMD5Changes");
+const crypto = require('crypto')
 const { prompt } = require('./utils')
 
-let includesPath = config.includes || []
-let excludesPath = config.excludes || []
-let excludesAnyPath = config.excludesAnyPath || []
+let workdir = process.cwd()
+let targetDir = ""
+let config = {}
+let md5Cache = {}
 
-// console.log('includesPath', includesPath)
-// console.log('excludesPath', excludesPath)
+// 需要复制和忽略的文件路径
+let includesPath = []
+let excludesPath = []
+let excludesAnyPath = []
 
-
-let targetDir = "";
+// 统计信息
 let excludeFiles = [];
 let uploadFiles = [];
 
-function start(dir) {
+function startCopyFile(dir, configParam) {
     targetDir = dir;
+    config = configParam;
+    includesPath = config.includes || []
+    excludesPath = config.excludes || []
+    excludesAnyPath = config.excludesAnyPath || []
+
+    // init md5Cache
+    if (config.md5CacheFile) {
+        const md5CacheFilePath = path.join(workdir, config.md5CacheFile)
+        if (fs.existsSync(md5CacheFilePath)) {
+            md5Cache = JSON.parse(fs.readFileSync(md5CacheFilePath).toString() || '{}')
+        }
+    }
+
     return new Promise(resolve => {
         if (fs.existsSync(targetDir)) {
             prompt(`${targetDir}目录已存在, 是否删除该目录? (y/n)\n`).then(res => {
@@ -133,7 +148,40 @@ function deleteAllFile(filePath) {
 }
 
 
+function calcFileMD5Change(filePath) {
+    if (!config.md5CacheFile) {
+        return true
+    }
+
+    let fileContent
+    let stat = fs.statSync(filePath)
+    // 大文件读取较慢, 使用mtimeMs和size来判断是否修改
+    if (stat.size > 50 * 1024 * 1024) {
+        fileContent = `${stat.mtimeMs};${stat.ctimeMs};${stat.size}`
+    } else {
+        fileContent = fs.readFileSync(filePath)
+    }
+    const md5Hash = crypto.createHash('md5').update(fileContent).digest('hex')
+
+    if (md5Cache[filePath] === md5Hash) {
+        return false
+    }
+
+    md5Cache[filePath] = md5Hash;
+    return true
+}
+
+function saveFileMD5Change() {
+    if (!config.md5CacheFile) {
+        return
+    }
+    const md5CacheFilePath = path.join(workdir, config.md5CacheFile)
+    fs.writeFileSync(md5CacheFilePath, JSON.stringify(md5Cache, null, 2))
+    console.log('已更新' + md5CacheFilePath + '文件')
+}
+
 module.exports = {
-    start,
+    startCopyFile,
     clearDist,
+    saveFileMD5Change,
 }

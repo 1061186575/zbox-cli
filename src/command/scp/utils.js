@@ -1,11 +1,11 @@
 const { execSync, spawn } = require("child_process");
 const readline = require("readline");
 
-function getGitCommit() {
+function getGitCommit(workdir) {
     let res = ''
     try {
         res = execSync('git log -n 1', {
-            // cwd: workdir
+            cwd: workdir
         }).toString()
     } catch (e) {
         return {

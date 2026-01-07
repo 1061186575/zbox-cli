@@ -1,33 +1,24 @@
-initConfig()
-
 const path = require("path")
 const fs = require("fs")
 const { exec } = require('child_process')
-const { start: startCopyFile, clearDist } = require('./copyToDist')
+const { startCopyFile, clearDist, saveFileMD5Change } = require('./copyToDist')
 const { getGitCommit, prompt, spawnExec } = require("./utils")
-const { saveFileMD5Change } = require("./calcFileMD5Changes");
 
-function initConfig() {
-    const path = require("path")
-    global.workdir = process.cwd()
+const workdir = process.cwd()
+async function main(configFilePath, gitCommitCheck) {
     console.log('workdir', workdir)
-    process.chdir(path.join(__dirname))
-    const argv2 = process.argv[2]
-    let configPath = path.join(workdir, 'publishConfig.js')
-    if (argv2.startsWith('--config=')) {
-        let filepath = argv2.slice('--config='.length)
-        configPath = path.join(workdir, filepath)
-    }
+
+    let configPath = path.join(workdir, configFilePath || 'publishConfig.js')
     console.log('configPath', configPath)
-    global.config = require(configPath)
-}
 
-const localDist = path.join(workdir, config.localDist)
+    if (!fs.existsSync(configPath)) {
+        return clog('未找到配置文件', 'err')
+    }
 
+    const config = require(configPath)
 
-async function start() {
-    if (config.gitCommitCheck) {
-        if (!await gitStatusCheck()) {
+    if (gitCommitCheck || config.gitCommitCheck) {
+        if (!await gitStatusCheck(workdir)) {
             let res = await prompt(`有代码未提交, 确定还要继续上传吗? (y/n)\n`)
             if (res !== 'y') {
                 return
@@ -35,25 +26,26 @@ async function start() {
         }
     }
 
-    let copyRes = await startCopyFile(localDist)
+    const localDist = path.join(workdir, config.localDist)
+    let copyRes = await startCopyFile(localDist, config)
     if (!copyRes) return
 
     if (config.versionFile) {
-        writeVersion(config.versionFile)
+        writeVersion(config.versionFile, localDist)
     }
 
-    uploadCloud()
+    uploadCloud(localDist, config)
 
 }
 
 
-function writeVersion(versionFile) {
+function writeVersion(versionFile, localDist) {
     let writePath = path.join(localDist, versionFile)
     let writeDirPath = path.parse(writePath).dir
     if (!fs.existsSync(writeDirPath)) {
         fs.mkdirSync(writeDirPath, { recursive: true })
     }
-    const { commitHash, commitDate } = getGitCommit()
+    const { commitHash, commitDate } = getGitCommit(workdir)
     let content = JSON.stringify({
         buildTimestamp: new Date().getTime(),
         buildDate: new Date().toLocaleString(),
@@ -65,9 +57,9 @@ function writeVersion(versionFile) {
     fs.writeFileSync(writePath, content)
 }
 
-function gitStatusCheck() {
+function gitStatusCheck(workdir = process.cwd()) {
     return new Promise((resolve, reject) => {
-        exec('git status', function (err, result) {
+        exec('git status', { cwd: workdir }, function (err, result) {
             if (err) {
                 reject(err)
                 return
@@ -92,7 +84,7 @@ function gitStatusCheck() {
     })
 }
 
-function uploadCloud() {
+function uploadCloud(localDist, config) {
 
     const commandStr = `scp -r ${path.join(localDist, '/*')} ${config.remoteServerPath}` // 末尾的斜杠表示只复制目录中的内容，而不复制目录本身。
     console.log(`开始上传 ${localDist} 至服务器 ${config.remoteServerPath}`)
@@ -127,3 +119,5 @@ function clog(str, type = '') {
             console.log(str)
     }
 }
+
+module.exports = main;
