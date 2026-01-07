@@ -3,19 +3,20 @@ const path = require('path')
 const crypto = require('crypto')
 const { question } = require("../utils");
 
-async function main(actionPath, action, recordFileName = '.__RECORDFILENAME') {
+async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ext = false) {
 
     if (!actionPath) {
-        actionPath = await question('请输入文件夹路径:')
+        actionPath = await question('请输入文件夹路径: ')
     }
     const directoryPath = path.resolve(actionPath)
+    console.log(`directoryPath`, directoryPath);
 
     if (!action) {
-        action = await question('请输入操作(1: rename, 2: restore):')
+        action = await question('请输入操作(1: rename, 2: restore): ')
     }
 
     if (action === '1') {
-        renameRandom(directoryPath, recordFileName)
+        renameRandom(directoryPath, recordFileName, ext)
     } else if (action === '2') {
         restore(directoryPath, recordFileName)
     } else {
@@ -26,7 +27,7 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME') {
 
 
 // 将文件重命名并保存原文件名和新文件名到 recordFileName
-function renameRandom(directoryPath, recordFileName) {
+function renameRandom(directoryPath, recordFileName, ext) {
 
     if (!fs.existsSync(directoryPath)) {
         console.log('文件夹不存在')
@@ -47,7 +48,11 @@ function renameRandom(directoryPath, recordFileName) {
 
         filePaths.forEach((filePath) => {
             const fileName = filePath.replace(directoryPath, '')
-            const randomName = generateRandomName()
+            let extname = ''
+            if (ext) {
+                extname = path.extname(fileName)
+            }
+            const randomName = generateRandomName() + extname
             const renamedFilePath = path.join(directoryPath, randomName)
             fs.renameSync(filePath, renamedFilePath)
             nameMap[fileName] = randomName
