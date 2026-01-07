@@ -1,0 +1,10 @@
+{
+  "name": "publish",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "publish": "node ../index.js --config=publishConfig.js"
+  },
+  "dependencies": {
+  }
+}
