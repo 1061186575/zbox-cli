@@ -20,7 +20,7 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ba
     } else if (action === '2') {
         restore(directoryPath, recordFileName, base64)
     } else {
-        console.log('输入错误')
+        console.log('无效输入')
     }
 
 }
@@ -71,8 +71,6 @@ function randomRename(directoryPath, recordFileName, base64, ext) {
     } catch (e) {
         console.log('e', e)
         return
-    } finally {
-        console.log('nameMap', nameMap)
     }
     console.log('Files renamed successfully.')
 
@@ -109,6 +107,7 @@ async function restore(directoryPath, recordFileName, base64) {
         }
     }
 
+    const errList = [];
     Object.entries(nameMap).forEach(([originalName, renamedName]) => {
         const originalFilePath = path.join(directoryPath, renamedName)
         const restoredFilePath = path.join(directoryPath, originalName)
@@ -120,20 +119,25 @@ async function restore(directoryPath, recordFileName, base64) {
             // 读取文件部分内容，判断是否是 base64 格式, 避免误解码
             const firstChars = safeReadFirstChars(originalFilePath);
             const base64Regexp = /^[A-Za-z0-9+/]*={0,2}$/;
-            if (!base64Regexp.test(firstChars)) {
-                console.error(`文件内容不是base64格式, 不能解码`)
-                return;
+            if (base64Regexp.test(firstChars)) {
+                decodeFileFromBase64(originalFilePath, restoredFilePath)
+                // console.log(`已对文件进行 base64 解码并还原: ${renamedName} -> ${originalName}`)
+            } else {
+                errList.push(`文件内容不是base64格式, 仅重命名, 不能解码: ${originalFilePath}`)
+                fs.renameSync(originalFilePath, restoredFilePath)
             }
-            decodeFileFromBase64(originalFilePath, restoredFilePath)
-            console.log(`已对文件进行 base64 解码并还原: ${renamedName} -> ${originalName}`)
         } else {
             fs.renameSync(originalFilePath, restoredFilePath)
         }
     })
-    console.log('Files restored successfully.')
 
-    fs.rmSync(nameFilePath)
-    console.log(`delete ${nameFilePath}`)
+    if (errList.length) {
+        console.log(`errList`, errList);
+    } else {
+        console.log('Files restored successfully.')
+        fs.rmSync(nameFilePath)
+        console.log(`delete ${nameFilePath}`)
+    }
 }
 
 
