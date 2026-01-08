@@ -2,42 +2,48 @@ const axios = require('axios');
 const m3u8Parser = require('m3u8-parser');
 const fs = require('fs');
 const path = require('path');
+const { question } = require("../utils");
 
 /**
  * 用 nodejs下载文件, 不使用 ffmpeg, 下载之前需要检查下载的单个ts文件是否可以播放, 可以播放再使用本文件下载
  * 下载中途可以中断, 不会重复下载
- * 如果要下载多个, 修改 url 和 filename, 打开新终端运行
  */
 
-const m3u8Url = 'https://xxx.com/xxx/index.m3u8';
-const m3u8FileName = 'xxx.mp4'
-const saveDir = 'C:\\M3U8Download'
+let m3u8Url = 'https://xxx.com/xxx/index.m3u8';
+let saveDir = './'
+let m3u8FileName = 'demo.mp4'
+
+let outputFilePath = '';
+let m3u8UrlPath = ''
+let m3u8TsDir = m3u8UrlPath + '.ts'
+
+const downloadFailList = []
 const segmentsHasBaseUrl = true
 
+async function init() {
+    m3u8Url = (await question(`请输入 m3u8 url:`)).trim()
+    saveDir = (await question(`请输入保存的文件路径:`)).trim()
+    m3u8FileName = (await question(`请输入保存的文件名称:`)).trim()
 
-const outputFilePath = path.join(saveDir, m3u8FileName);
-const m3u8UrlPath = path.join(saveDir, m3u8Url.replace(/[:\/]/g, '_'))
-const m3u8TsDir = m3u8UrlPath + '.ts'
-const downloadFailList = []
-console.log('m3u8UrlPath', m3u8UrlPath)
-console.log('m3u8TsDir', m3u8TsDir)
+    outputFilePath = path.join(saveDir, m3u8FileName)
+    m3u8UrlPath = path.join(saveDir, m3u8Url.replace(/[:\/]/g, '_'))
+    m3u8TsDir = m3u8UrlPath + '.ts'
 
-if (!fs.existsSync(m3u8TsDir)) {
-    fs.mkdirSync(m3u8TsDir)
-}
-if (fs.existsSync(outputFilePath)) {
-    console.log('目标文件已存在', outputFilePath)
-    throw '目标文件已存在'
+    if (!fs.existsSync(m3u8TsDir)) {
+        fs.mkdirSync(m3u8TsDir)
+    }
 }
 
-async function start() {
+async function main() {
+    await init();
+    if (fs.existsSync(outputFilePath)) {
+        console.log('目标文件已存在, 请删除文件之后再下载', outputFilePath)
+        return;
+    }
     const m3u8Content = await getM3u8Content(m3u8Url)
     const segments = getSegments(m3u8Content)
     download(segments)
 }
-
-start()
-
 
 async function getM3u8Content(m3u8Url) {
     if (fs.existsSync(m3u8UrlPath)) {
@@ -116,7 +122,6 @@ function download(segments) {
     downloadSegment(0);
 }
 
-
 function mergeFiles(segments) {
     console.log('开始合并');
 
@@ -145,3 +150,5 @@ function mergeFiles(segments) {
     // 从第一个片段开始递归写入
     writeNextStream(0);
 }
+
+module.exports = main
