@@ -112,6 +112,11 @@ async function restore(directoryPath, recordFileName, base64) {
         const originalFilePath = path.join(directoryPath, renamedName)
         const restoredFilePath = path.join(directoryPath, originalName)
 
+        if (!fs.existsSync(originalFilePath)) {
+            errList.push(`原文件不存在, 无法重命名 ❌ : ${renamedName} -> ${originalName}`)
+            return
+        }
+
         fs.mkdirSync(path.parse(restoredFilePath).dir, { recursive: true });
 
         // 如果使用了 base64 编码，需要先解码再还原文件名
@@ -123,7 +128,7 @@ async function restore(directoryPath, recordFileName, base64) {
                 decodeFileFromBase64(originalFilePath, restoredFilePath)
                 // console.log(`已对文件进行 base64 解码并还原: ${renamedName} -> ${originalName}`)
             } else {
-                errList.push(`文件内容不是base64格式, 仅重命名, 不能解码: ${originalFilePath}`)
+                errList.push(`文件内容不是base64格式, 仅重命名, 不能解码: ${renamedName} -> ${originalName}`)
                 fs.renameSync(originalFilePath, restoredFilePath)
             }
         } else {
@@ -135,9 +140,9 @@ async function restore(directoryPath, recordFileName, base64) {
         console.log(`errList`, errList);
     } else {
         console.log('Files restored successfully.')
-        fs.rmSync(nameFilePath)
-        console.log(`delete ${nameFilePath}`)
     }
+    fs.rmSync(nameFilePath)
+    console.log(`delete ${nameFilePath}`)
 }
 
 
