@@ -3,7 +3,7 @@ const path = require('path')
 const crypto = require('crypto')
 const { question } = require("../utils");
 
-async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ext = false, base64 = false) {
+async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', base64 = false, ext = false) {
 
     if (!actionPath) {
         actionPath = await question('请输入文件夹路径: ')
@@ -16,9 +16,9 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ex
     }
 
     if (action === '1') {
-        renameRandom(directoryPath, recordFileName, ext, base64)
+        randomRename(directoryPath, recordFileName, base64, ext)
     } else if (action === '2') {
-        restore(directoryPath, recordFileName)
+        restore(directoryPath, recordFileName, base64)
     } else {
         console.log('输入错误')
     }
@@ -27,7 +27,7 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ex
 
 
 // 将文件重命名并保存原文件名和新文件名到 recordFileName
-function renameRandom(directoryPath, recordFileName, ext, base64) {
+function randomRename(directoryPath, recordFileName, base64, ext) {
 
     if (!fs.existsSync(directoryPath)) {
         console.log('文件夹不存在')
@@ -38,7 +38,8 @@ function renameRandom(directoryPath, recordFileName, ext, base64) {
 
     if (fs.existsSync(nameFilePath)) {
         console.log('需要先还原才能继续重命名')
-        throw `${nameFilePath} exists!`
+        console.log(`${nameFilePath} exists!`);
+        return;
     }
 
     const nameMap = {
@@ -84,20 +85,29 @@ function renameRandom(directoryPath, recordFileName, ext, base64) {
 
 
 // 根据 recordFileName 还原文件名
-function restore(directoryPath, recordFileName) {
+async function restore(directoryPath, recordFileName, base64) {
     const nameFilePath = path.join(directoryPath, recordFileName)
 
     if (!fs.existsSync(nameFilePath)) {
         console.log('需要先重命名才能继续还原')
-        throw `${nameFilePath} file does not exist.`
+        console.log(`${nameFilePath} file does not exist.`);
+        return;
     }
 
     const nameFileContent = numToStr(fs.readFileSync(nameFilePath, 'utf8'))
     const nameMap = JSON.parse(nameFileContent)
 
     // 获取是否使用了 base64 编码
-    const isUseBase64 = nameMap.__isUseBase64 || false
-    delete nameMap.__isUseBase64  // 删除标志字段，避免当作文件名处理
+    let isUseBase64 = nameMap.__isUseBase64 || false
+    delete nameMap.__isUseBase64  // 删除标记字段，避免当作文件名处理
+
+    // 如果文件里面没有 base64 标记, 但是参数传了 base64 标记, 二次确认
+    if (!isUseBase64 && base64) {
+        const confirm = await question('文件里面没有 base64 标记, 确定要 base64 解码? (y/n): ')
+        if (confirm === 'y') {
+            isUseBase64 = true;
+        }
+    }
 
     Object.entries(nameMap).forEach(([originalName, renamedName]) => {
         const originalFilePath = path.join(directoryPath, renamedName)
@@ -107,6 +117,13 @@ function restore(directoryPath, recordFileName) {
 
         // 如果使用了 base64 编码，需要先解码再还原文件名
         if (isUseBase64) {
+            // 读取文件部分内容，判断是否是 base64 格式, 避免误解码
+            const firstChars = safeReadFirstChars(originalFilePath);
+            const base64Regexp = /^[A-Za-z0-9+/]*={0,2}$/;
+            if (!base64Regexp.test(firstChars)) {
+                console.error(`文件内容不是base64格式, 不能解码`)
+                return;
+            }
             decodeFileFromBase64(originalFilePath, restoredFilePath)
             console.log(`已对文件进行 base64 解码并还原: ${renamedName} -> ${originalName}`)
         } else {
@@ -261,6 +278,23 @@ function decodeFileFromBase64(inputPath, outputPath) {
         console.error('写入文件时出错:', err)
         readStream.destroy()
     })
+}
+
+function safeReadFirstChars(filePath, charLength = 10000) {
+    try {
+        const fd = fs.openSync(filePath, 'r');
+        const fileSize = fs.fstatSync(fd).size;
+        const bytesToRead = Math.min(charLength, fileSize);
+        const buffer = Buffer.alloc(bytesToRead);
+
+        fs.readSync(fd, buffer, 0, bytesToRead, 0);
+        fs.closeSync(fd);
+
+        return buffer.toString();
+    } catch (err) {
+        console.error('读取文件错误:', err);
+        return '';
+    }
 }
 
 module.exports = main
