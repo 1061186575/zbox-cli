@@ -41,7 +41,7 @@ function find(filepath) {
 
         let reg = new RegExp(`api\\('${fnName}'[\\W\\w]+?}\\)`)
         let matchRes2 = content2.match(reg)
-        console.log(`找到 api 代码:\n`, matchRes2?.[0].trim());
+        console.log(`找到 api 代码:\n`, matchRes2?.[0].trim())
     }
 }
 
@@ -50,7 +50,7 @@ function main(url) {
         find(url)
         return
     }
-    prompt('前端 url 路径是?\n').then(res => {
+    prompt('请求的 url 是?\n').then(res => {
         find(res)
     })
 }
