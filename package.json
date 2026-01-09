@@ -1,7 +1,7 @@
 {
     "name": "zbox-cli",
-    "version": "0.1.0-beta.7",
-    "description": "A collection of utility tools for file/git operations, and more",
+    "version": "0.1.0",
+    "description": "A collection of utility tools for file/git/scp operations, and more",
     "main": "src/index.js",
     "bin": {
         "zbox": "bin/zbox.js"
@@ -39,13 +39,13 @@
         "cli-tools"
     ],
     "author": "",
-    "license": "MIT",
+    "license": "",
     "engines": {
         "node": ">=20"
     },
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/1061186575/zbox-cli"
     },
     "bugs": {
         "url": ""
