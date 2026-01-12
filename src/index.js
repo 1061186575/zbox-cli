@@ -34,3 +34,40 @@ program
         scpMain(options.config, options.gitCommitCheck)
     })
 
+// 网络设备发现工具
+program
+    .command('findDevice')
+    .option('-p, --port <port>', '目标端口号', '80')
+    .option('--path <path>', '目标路径', '/')
+    .option('-t, --timeout <timeout>', '请求超时时间(毫秒)', '3000')
+    .option('-c, --concurrency <concurrency>', '并发扫描数量', '20')
+    .option('--customNetworks <networks>', '自定义网络列表 (JSON格式)')
+    .description('扫描本地网络中运行指定服务的设备')
+    .action(async (options) => {
+        const findDevice = require('./command/findDevice');
+        const config = {
+            port: parseInt(options.port),
+            path: options.path,
+            timeout: parseInt(options.timeout),
+            concurrency: parseInt(options.concurrency)
+        };
+
+        // 处理自定义网络
+        if (options.customNetworks) {
+            try {
+                config.customNetworks = JSON.parse(options.customNetworks);
+            } catch (error) {
+                console.error('自定义网络参数格式错误，请使用有效的 JSON 格式');
+                console.error('示例: --customNetworks \'[{"interface":"en0","network":"192.168.1.0","ip":"192.168.1.100","netmask":"255.255.255.0","totalHosts":256}]\'');
+                process.exit(1);
+            }
+        }
+
+        try {
+            await findDevice(config);
+        } catch (error) {
+            console.error('findDevice 执行失败:', error.message);
+            process.exit(1);
+        }
+    })
+
