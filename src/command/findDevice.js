@@ -131,7 +131,7 @@ async function scanDevices(ips, port, path, timeout, concurrency = 20) {
 
             // 显示进度
             const progress = Math.min(i + concurrency, ips.length);
-            console.log(`进度: ${progress}/${ips.length} (${Math.round(progress/ips.length*100)}%)`);
+            console.log(`进度: ${progress}/${ips.length} (${Math.round(progress / ips.length * 100)}%)`);
         } catch (error) {
             console.error(`批次处理错误:`, error);
         }
@@ -142,6 +142,18 @@ async function scanDevices(ips, port, path, timeout, concurrency = 20) {
 
 // 主函数
 async function main(options = {}) {
+
+    // 处理自定义网络
+    if (options.customNetworks) {
+        try {
+            options.customNetworks = JSON.parse(options.customNetworks);
+        } catch (error) {
+            console.error('自定义网络参数格式错误，请使用有效的 JSON 格式');
+            console.error('示例: --customNetworks \'[{"interface":"en0","network":"192.168.1.0","ip":"192.168.1.100","netmask":"255.255.255.0","totalHosts":256}]\'');
+            return;
+        }
+    }
+
     const config = { ...defaultConfig, ...options };
     let allFoundDevices = [];
 
@@ -177,26 +189,9 @@ async function main(options = {}) {
     });
     console.log('');
 
-    // 设置中断处理
-    let interrupted = false;
-    const handleInterrupt = () => {
-        interrupted = true;
-        console.log('\n\n⏹️  扫描已中断');
-        if (allFoundDevices.length > 0) {
-            console.log(`已找到 ${allFoundDevices.length} 台设备:`);
-            allFoundDevices.forEach((device, index) => {
-                console.log(`${index + 1}. http://${device.ip}:${device.port}${device.path}`);
-            });
-        }
-    };
-
-    process.on('SIGINT', handleInterrupt);
-    process.on('SIGTERM', handleInterrupt);
-
     try {
         // 扫描所有网络
         for (const network of networks) {
-            if (interrupted) break;
 
             console.log(`扫描网络: ${network.network} (接口: ${network.interface})`);
             console.log('----------------------------------------');
@@ -216,34 +211,32 @@ async function main(options = {}) {
         }
 
         // 总结结果
-        if (!interrupted) {
-            console.log('📊 扫描完成');
-            console.log('=============');
+        console.log('📊 扫描完成');
+        console.log('=============');
 
-            if (allFoundDevices.length === 0) {
-                console.log('❌ 未找到运行指定服务的设备');
-                console.log('');
-                console.log('建议:');
-                console.log('  1. 确认目标设备已开机并连接到网络');
-                console.log(`  2. 确认目标设备的 ${config.port} 端口已开放`);
-                console.log(`  3. 确认目标设备在 ${config.path} 路径下有服务运行`);
-                console.log('  4. 检查防火墙设置');
-            } else {
-                console.log(`✅ 找到 ${allFoundDevices.length} 台设备:`);
-                console.log('');
+        if (allFoundDevices.length === 0) {
+            console.log('❌ 未找到运行指定服务的设备');
+            console.log('');
+            console.log('建议:');
+            console.log('  1. 确认目标设备已开机并连接到网络');
+            console.log(`  2. 确认目标设备的 ${config.port} 端口已开放`);
+            console.log(`  3. 确认目标设备在 ${config.path} 路径下有服务运行`);
+            console.log('  4. 检查防火墙设置');
+        } else {
+            console.log(`✅ 找到 ${allFoundDevices.length} 台设备:`);
+            console.log('');
 
-                allFoundDevices.forEach((device, index) => {
-                    console.log(`${index + 1}. http://${device.ip}:${device.port}${device.path}`);
-                    console.log(`   HTTP状态: ${device.status} ${device.statusText}`);
-                    if (device.headers['content-type']) {
-                        console.log(`   内容类型: ${device.headers['content-type']}`);
-                    }
-                    if (device.headers.server) {
-                        console.log(`   服务器: ${device.headers.server}`);
-                    }
-                    console.log('');
-                });
-            }
+            allFoundDevices.forEach((device, index) => {
+                console.log(`${index + 1}. http://${device.ip}:${device.port}${device.path}`);
+                console.log(`   HTTP状态: ${device.status} ${device.statusText}`);
+                if (device.headers['content-type']) {
+                    console.log(`   内容类型: ${device.headers['content-type']}`);
+                }
+                if (device.headers.server) {
+                    console.log(`   服务器: ${device.headers.server}`);
+                }
+                console.log('');
+            });
         }
     } catch (error) {
         console.error('扫描过程中发生错误:', error);

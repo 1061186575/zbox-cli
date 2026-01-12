@@ -66,3 +66,21 @@ file
     .option('-p, --printInputFileTemplate', '打印 inputFile 参数对应的文件模板')
     .action(require('./ffmpegDownloadM3u8'))
 
+
+// scp 复制文件到服务器
+file
+    .command('scp')
+    .option('-c, --config <configPath>', '指定配置文件路径', './publishConfig.js')
+    .option('-g, --gitCommitCheck', '上传之前检查 git commit 状态', false)
+    .option('-p, --printDemoConfig', '打印配置示例')
+    .description('使用 scp 命令复制文件到服务器 1.支持增量上传 2.支持上传前检查 git 状态')
+    .action(options => {
+        if (options.printDemoConfig) {
+            const demoConfigPath = path.join(__dirname, './command/scp/demo/publishConfig.js')
+            console.log('demoConfigPath', demoConfigPath);
+            console.log(readFileSync(demoConfigPath, 'utf8'));
+            return;
+        }
+        const scpMain = require('./scp/index')
+        scpMain(options.config, options.gitCommitCheck)
+    })
