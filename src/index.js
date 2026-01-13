@@ -32,5 +32,7 @@ program
 program
     .command('md5')
     .description('计算输入内容的 MD5 哈希值')
-    .option('-l, --length <length>', '输出长度(最大 32)', 10)
+    .option('-i, --iteration <iteration>', '迭代次数', 1)
+    .option('-l, --length <length>', '输出长度', 32)
+    .option('-b, --base64', '输出结果转为 base64', false)
     .action(require('./command/md5'))

@@ -40,7 +40,7 @@ file
     .option('--no-recursive', '不递归处理子目录')
     .option('--overwrite', '覆盖已存在的文件')
     .action(async (input, options) => {
-        const key = await question('加密密钥:')
+        const key = await question('解密密钥:')
         await require('./fileEncryptor').decryptCLI(input, key, options);
         console.log('✅ 解密完成！');
     });
