@@ -270,7 +270,6 @@ async function decryptCLI(inputPath, key, options = {}) {
 
 // 导出模块
 module.exports = {
-    FileEncryptor,
     encryptCLI,
     decryptCLI,
     isEncryptedFile: FileEncryptor.isEncryptedFile
