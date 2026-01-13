@@ -142,6 +142,12 @@ async function scanDevices(ips, port, path, timeout, concurrency = 20) {
 
 // 主函数
 async function main(options = {}) {
+    options = {
+        ...options,
+        port: parseInt(options.port),
+        timeout: parseInt(options.timeout),
+        concurrency: parseInt(options.concurrency)
+    }
 
     // 处理自定义网络
     if (options.customNetworks) {
