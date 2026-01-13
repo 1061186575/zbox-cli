@@ -15,7 +15,7 @@
         "release": "npm publish"
     },
     "dependencies": {
-        "commander": "^14.0.2",
+        "commander": "^9.0.2",
         "axios": "^1.4.0",
         "m3u8-parser": "^7.0.0"
     },
@@ -41,7 +41,7 @@
     "author": "",
     "license": "",
     "engines": {
-        "node": ">=20"
+        "node": ">=14"
     },
     "repository": {
         "type": "git",
