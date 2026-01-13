@@ -35,4 +35,5 @@ program
     .option('-i, --iteration <iteration>', '迭代次数', 1)
     .option('-l, --length <length>', '输出长度', 32)
     .option('-b, --base64', '输出结果转为 base64', false)
+    .option('--content <content>')
     .action(require('./command/md5'))
