@@ -13,7 +13,7 @@
 const { execSync } = require('child_process');
 const defaultMasterBranch = 'master'; // master or main
 
-async function main(targetBranch, masterBranch = defaultMasterBranch) {
+async function main(targetBranch, masterBranch = defaultMasterBranch, noMergeMaster) {
     console.time('总运行耗时');
     const curBranch = execSync(`git branch --show-current`).toString().trim();
 
@@ -26,19 +26,26 @@ async function main(targetBranch, masterBranch = defaultMasterBranch) {
     }
 
     const mergeAbort = 'git merge --abort';
-
-    const cmdList = [
+    const cmdList = [];
+    const cmdMergeMaster = [
         `git fetch origin refs/heads/${masterBranch}:refs/heads/${masterBranch} --recurse-submodules=no --progress`,
         `git merge refs/heads/${masterBranch}`,
         `git push origin refs/heads/${curBranch}:${curBranch}`,
+    ]
 
+    if (!noMergeMaster) {
+        cmdList.push(...cmdMergeMaster);
+    }
+
+    cmdList.push(
         `git fetch origin refs/heads/${targetBranch}:refs/heads/${targetBranch} --recurse-submodules=no --progress`,
         `git checkout ${targetBranch}`,
         `git merge refs/heads/${curBranch}`,
         `git push origin refs/heads/${targetBranch}:${targetBranch}`,
 
         `git checkout ${curBranch}`,
-    ];
+    );
+    // console.log(`cmdList`, cmdList);
 
     for (let i = 0; i < cmdList.length; i++) {
         let cmd = cmdList[i];
