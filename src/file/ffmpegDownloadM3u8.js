@@ -91,9 +91,12 @@ async function ffDownload(urls, urlsName = []) {
             if (fs.existsSync(filePath)) {
                 console.log(`第${cur}个文件已存在:`, filePath);
             } else {
-                // hwaccel => hardware acceleration
-                let args = ['-hwaccel', 'auto', '-i', url, filePath];
-                // let args = ['-hwaccel', 'auto', '-i', url, '-threads', '4', filePath];
+                let args = [
+                    '-i', url, // -i 参数必须要放 -c 参数前面
+                    '-c', 'copy',
+                    '-threads', '4',
+                    filePath
+                ]
                 console.log('args', args)
                 await spawnSync(ffmpegFile, args, {
                     stdio: 'inherit'
