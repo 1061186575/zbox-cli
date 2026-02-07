@@ -1,6 +1,6 @@
 {
     "name": "zbox-cli",
-    "version": "0.1.2-beta.1",
+    "version": "0.1.3",
     "description": "A collection of utility tools for file/git/scp operations, and more",
     "main": "src/index.js",
     "bin": {
