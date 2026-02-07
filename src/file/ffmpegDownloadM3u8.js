@@ -41,8 +41,8 @@ async function main(options) {
     } else {
         urls.push(await prompt('请输入m3u8文件url:\n'))
     }
-    if (options.saveFilename) {
-        urlsName.push(options.saveFilename)
+    if (options.name) {
+        urlsName.push(options.name)
     } else {
         urlsName.push(await prompt('请输入文件名称(可不填直接按回车):\n'))
     }
@@ -62,7 +62,7 @@ async function main(options) {
         return
     }
 
-    if (await prompt('确认下载? (y/n)\n') !== 'y') {
+    if (!options.yes && await prompt('确认下载? (y/n)\n') !== 'y') {
         return
     }
 
