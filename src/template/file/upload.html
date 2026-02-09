@@ -23,7 +23,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
@@ -201,8 +201,14 @@
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 600px) {
@@ -275,7 +281,7 @@
 
 <script>
     // 初始化
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         loadFileList();
         setupDragAndDrop();
         setupFileInputs();
@@ -349,46 +355,46 @@
 
             if (result.success) {
                 showMessage(`✅ ${result.message}`, 'success');
-                    loadFileList();
-                } else {
-                    showMessage(`❌ 上传失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                hideProgress();
-                showMessage(`❌ 上传失败: ${error.message}`, 'error');
+                loadFileList();
+            } else {
+                showMessage(`❌ 上传失败: ${result.error}`, 'error');
             }
+        } catch (error) {
+            hideProgress();
+            showMessage(`❌ 上传失败: ${error.message}`, 'error');
+        }
+    }
+
+    // 加载文件列表
+    async function loadFileList() {
+        try {
+            const response = await fetch('/files');
+            const res = await response.json();
+            displayFileList(res);
+        } catch (error) {
+            console.error('加载文件列表失败:', error);
+        }
+    }
+
+    // 显示文件列表
+    function displayFileList(res) {
+        const fileList = document.getElementById('fileList');
+        const uploadDirEle = document.getElementById('uploadDir');
+
+        const { files, uploadDir } = res;
+        uploadDirEle.innerText = uploadDir;
+
+        if (files.length === 0) {
+            fileList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无文件</div>';
+            return;
         }
 
-        // 加载文件列表
-        async function loadFileList() {
-            try {
-                const response = await fetch('/files');
-                const res = await response.json();
-                displayFileList(res);
-            } catch (error) {
-                console.error('加载文件列表失败:', error);
-            }
-        }
+        fileList.innerHTML = files.map(file => {
+            const icon = file.type === 'directory' ? '📁' : '📄';
+            const sizeText = file.size ? formatFileSize(file.size) : '';
+            const timeText = file.modified ? new Date(file.modified).toLocaleString() : '';
 
-        // 显示文件列表
-        function displayFileList(res) {
-            const fileList = document.getElementById('fileList');
-            const uploadDirEle = document.getElementById('uploadDir');
-
-            const { files, uploadDir } = res;
-            uploadDirEle.innerText = uploadDir;
-
-            if (files.length === 0) {
-                fileList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无文件</div>';
-                return;
-            }
-
-            fileList.innerHTML = files.map(file => {
-                const icon = file.type === 'directory' ? '📁' : '📄';
-                const sizeText = file.size ? formatFileSize(file.size) : '';
-                const timeText = file.modified ? new Date(file.modified).toLocaleString() : '';
-
-                return `
+            return `
                     <div class="file-item">
                         <span class="file-icon">${icon}</span>
                         <div class="file-info">
@@ -397,53 +403,57 @@
                         </div>
                     </div>
                 `;
-            }).join('');
-        }
+        }).join('');
+    }
 
-        // 格式化文件大小
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 
-        // 显示消息
-        function showMessage(message, type) {
-            const messageArea = document.getElementById('messageArea');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.innerHTML = message;
-            messageArea.appendChild(messageDiv);
+    // 显示消息
+    function showMessage(message, type) {
+        const messageArea = document.getElementById('messageArea');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.innerHTML = message;
+        messageArea.appendChild(messageDiv);
 
-            setTimeout(() => {
-                messageDiv.remove();
-            }, 5000);
-        }
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 5000);
+    }
 
-        // 显示进度条
-        function showProgress() {
-            const progressArea = document.getElementById('progressArea');
-            progressArea.innerHTML = `
+    // 显示进度条
+    function showProgress() {
+        const progressArea = document.getElementById('progressArea');
+        progressArea.innerHTML = `
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: 100%; animation: pulse 1.5s infinite;"></div>
                 </div>
             `;
-        }
+    }
 
-        // 隐藏进度条
-        function hideProgress() {
-            const progressArea = document.getElementById('progressArea');
-            progressArea.innerHTML = '';
-        }
+    // 隐藏进度条
+    function hideProgress() {
+        const progressArea = document.getElementById('progressArea');
+        progressArea.innerHTML = '';
+    }
 
-    </script>
+</script>
 
 <style>
     @keyframes pulse {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
+        0%, 100% {
+            opacity: 0.6;
+        }
+        50% {
+            opacity: 1;
+        }
     }
 </style>
 </body>

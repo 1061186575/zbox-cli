@@ -169,9 +169,11 @@ function parseMultipartData(buffer, boundary, uploadDir) {
 // 获取文件列表
 function getFileList(dir, relativePath = '') {
     const files = [];
+    const maxFileCount = 1000;
     const items = fs.readdirSync(path.join(dir, relativePath));
 
     items.forEach(item => {
+        if (files.length >= maxFileCount) return;
         const fullPath = path.join(dir, relativePath, item);
         const stat = fs.statSync(fullPath);
 
