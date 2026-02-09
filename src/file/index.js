@@ -1,5 +1,7 @@
 const { program } = require('commander');
 const { question } = require("../utils");
+const path = require('path');
+const { readFileSync } = require('fs');
 
 const file = program.command('file');
 
@@ -77,11 +79,22 @@ file
     .description('使用 scp 命令复制文件到服务器 1.支持增量上传 2.支持上传前检查 git 状态')
     .action(options => {
         if (options.printDemoConfig) {
-            const demoConfigPath = path.join(__dirname, './command/scp/demo/publishConfig.js')
+            const demoConfigPath = path.join(__dirname, './scp/demo/publishConfig.js')
             console.log('demoConfigPath', demoConfigPath);
             console.log(readFileSync(demoConfigPath, 'utf8'));
             return;
         }
         const scpMain = require('./scp/index')
         scpMain(options.config, options.gitCommitCheck)
+    })
+
+// 文件上传服务器
+file
+    .command('upload')
+    .description('启动文件上传服务器，支持上传文件和文件夹')
+    .option('-p, --port <port>', '指定服务端口', '3000')
+    .option('-d, --dir <directory>', '指定文件保存目录', process.cwd())
+    .action(options => {
+        const uploadServer = require('./upload')
+        uploadServer(options.port, options.dir)
     })

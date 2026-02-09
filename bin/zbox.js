@@ -3,6 +3,8 @@
 const { program } = require('commander');
 const pkg = require('../package.json');
 
+// node ./bin/zbox -h
+
 program
   .name('zbox')
   .description('A collection of utility tools for file/git operations, and more')
