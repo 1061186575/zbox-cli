@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传服务器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: "📁";
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e8f2ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.2s;
+            margin: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .files-section {
+            border-top: 1px solid #eee;
+            padding-top: 30px;
+        }
+
+        .files-section .section-title::before {
+            content: "📋";
+        }
+
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 10px;
+        }
+
+        .file-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .file-info {
+            flex-grow: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .file-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>文件上传服务器</h1>
+        <p>支持文件和文件夹上传</p>
+    </div>
+
+    <div class="content">
+        <div class="upload-section">
+            <h2 class="section-title">上传文件</h2>
+            <div class="upload-area" id="fileUploadArea">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">拖拽文件到这里，或者点击选择文件</div>
+                <div class="upload-hint">支持多文件上传</div>
+                <input type="file" id="fileInput" class="file-input" multiple>
+                <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    选择文件
+                </button>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h2 class="section-title">上传文件夹</h2>
+            <div class="upload-area" id="folderUploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击选择文件夹</div>
+                <div class="upload-hint">将保持原有目录结构</div>
+                <input type="file" id="folderInput" class="file-input" webkitdirectory multiple>
+                <button type="button" class="upload-btn" onclick="document.getElementById('folderInput').click()">
+                    选择文件夹
+                </button>
+            </div>
+        </div>
+
+        <div id="messageArea"></div>
+        <div id="progressArea"></div>
+
+        <div class="files-section">
+            <h2 class="section-title">保存路径: <span id="uploadDir"></span></h2>
+            <div class="file-list" id="fileList">
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    暂无文件
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFileList();
+        setupDragAndDrop();
+        setupFileInputs();
+    });
+
+    // 设置拖拽功能
+    function setupDragAndDrop() {
+        const fileArea = document.getElementById('fileUploadArea');
+        const folderArea = document.getElementById('folderUploadArea');
+
+        [fileArea, folderArea].forEach(area => {
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+
+            area.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+            });
+
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+                const isFolder = area.id === 'folderUploadArea';
+                if (isFolder) {
+                    alert('拖拽上传文件夹会丢失目录结构, 请手动选择上传');
+                    return;
+                }
+                handleFileUpload(files, isFolder);
+            });
+        });
+    }
+
+    // 设置文件输入框
+    function setupFileInputs() {
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            handleFileUpload(e.target.files, false);
+            e.target.value = ''; // 清空输入框
+        });
+
+        document.getElementById('folderInput').addEventListener('change', (e) => {
+            handleFileUpload(e.target.files, true);
+            e.target.value = ''; // 清空输入框
+        });
+    }
+
+    // 处理文件上传
+    async function handleFileUpload(files, isFolder) {
+        if (files.length === 0) return;
+
+        showProgress();
+
+        const formData = new FormData();
+        const fieldName = isFolder ? 'folderFiles' : 'files';
+
+        for (let file of files) {
+            formData.append(fieldName, file, isFolder ? file.webkitRelativePath : file.name);
+        }
+
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            hideProgress();
+
+            if (result.success) {
+                showMessage(`✅ ${result.message}`, 'success');
+                    loadFileList();
+                } else {
+                    showMessage(`❌ 上传失败: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                hideProgress();
+                showMessage(`❌ 上传失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 加载文件列表
+        async function loadFileList() {
+            try {
+                const response = await fetch('/files');
+                const res = await response.json();
+                displayFileList(res);
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+            }
+        }
+
+        // 显示文件列表
+        function displayFileList(res) {
+            const fileList = document.getElementById('fileList');
+            const uploadDirEle = document.getElementById('uploadDir');
+
+            const { files, uploadDir } = res;
+            uploadDirEle.innerText = uploadDir;
+
+            if (files.length === 0) {
+                fileList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无文件</div>';
+                return;
+            }
+
+            fileList.innerHTML = files.map(file => {
+                const icon = file.type === 'directory' ? '📁' : '📄';
+                const sizeText = file.size ? formatFileSize(file.size) : '';
+                const timeText = file.modified ? new Date(file.modified).toLocaleString() : '';
+
+                return `
+                    <div class="file-item">
+                        <span class="file-icon">${icon}</span>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-details">${file.path} ${sizeText ? '• ' + sizeText : ''} ${timeText ? '• ' + timeText : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 显示消息
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = message;
+            messageArea.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // 显示进度条
+        function showProgress() {
+            const progressArea = document.getElementById('progressArea');
+            progressArea.innerHTML = `
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; animation: pulse 1.5s infinite;"></div>
+                </div>
+            `;
+        }
+
+        // 隐藏进度条
+        function hideProgress() {
+            const progressArea = document.getElementById('progressArea');
+            progressArea.innerHTML = '';
+        }
+
+    </script>
+
+<style>
+    @keyframes pulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+</style>
+</body>
+</html>
