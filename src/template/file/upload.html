@@ -310,7 +310,7 @@
                 const files = e.dataTransfer.files;
                 const isFolder = area.id === 'folderUploadArea';
                 if (isFolder) {
-                    alert('拖拽上传文件夹会丢失目录结构, 请手动选择上传');
+                    showMessage('拖拽上传文件夹会丢失目录结构, 请手动选择上传', 'error');
                     return;
                 }
                 handleFileUpload(files, isFolder);
