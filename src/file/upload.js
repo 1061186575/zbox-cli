@@ -49,9 +49,6 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd()) {
         const url = `http://localhost:${port}`;
         console.log(`地址: ${url}`);
         console.log(`上传目录: ${uploadDir}`);
-
-        // 尝试打开浏览器
-        openBrowser(url);
     });
 
     return server;
@@ -196,27 +193,6 @@ function getFileList(dir, relativePath = '') {
     });
 
     return files;
-}
-
-// 打开浏览器
-function openBrowser(url) {
-    let command;
-    switch (process.platform) {
-        case 'darwin':
-            command = `open "${url}"`;
-            break;
-        case 'win32':
-            command = `start "${url}"`;
-            break;
-        default:
-            command = `xdg-open "${url}"`;
-    }
-
-    exec(command, (error) => {
-        if (error) {
-            console.log(`💡 请手动在浏览器中打开: ${url}`);
-        }
-    });
 }
 
 // 生成上传页面 HTML
