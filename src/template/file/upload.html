@@ -53,6 +53,8 @@
             margin-bottom: 20px;
             display: flex;
             align-items: center;
+            word-break: break-word;
+            flex-wrap: wrap;
         }
 
         .section-title::before {
@@ -238,6 +240,8 @@
         <p>支持文件和文件夹上传</p>
     </div>
 
+    <div id="messageArea"></div>
+
     <div class="content">
         <div class="upload-section">
             <h2 class="section-title">上传文件</h2>
@@ -265,11 +269,13 @@
             </div>
         </div>
 
-        <div id="messageArea"></div>
         <div id="progressArea"></div>
 
         <div class="files-section">
-            <h2 class="section-title">保存路径: <span id="uploadDir"></span></h2>
+            <h2 class="section-title">
+                <div>保存路径:</div>
+                <span id="uploadDir"></span>
+            </h2>
             <div class="file-list" id="fileList">
                 <div style="padding: 20px; text-align: center; color: #666;">
                     暂无文件
@@ -393,13 +399,14 @@
             const icon = file.type === 'directory' ? '📁' : '📄';
             const sizeText = file.size ? formatFileSize(file.size) : '';
             const timeText = file.modified ? new Date(file.modified).toLocaleString() : '';
+            const details = ((sizeText ? ' • ' + sizeText : '') + (timeText ? ' • ' + timeText : '')).slice(3)
 
             return `
                     <div class="file-item">
                         <span class="file-icon">${icon}</span>
                         <div class="file-info">
                             <div class="file-name">${file.name}</div>
-                            <div class="file-details">${file.path} ${sizeText ? '• ' + sizeText : ''} ${timeText ? '• ' + timeText : ''}</div>
+                            <div class="file-details">${details}</div>
                         </div>
                     </div>
                 `;

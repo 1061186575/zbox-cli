@@ -2,9 +2,11 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const formidable = require('formidable');
+const { getIps } = require("../utils");
 
 // 创建服务器函数
 async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFileSize = 10, maxTotalFileSize = 20) {
+    uploadDir = path.resolve(uploadDir);
     // 确保上传目录存在
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -45,8 +47,10 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
     });
 
     server.listen(port, () => {
-        const url = `http://localhost:${port}`;
-        console.log(`地址: ${url}`);
+        console.log(`地址: http://localhost:${port}`);
+        getIps().map(ip => {
+            console.log(`地址: http://${ip}:${port}`);
+        })
         console.log(`上传目录: ${uploadDir}`);
     });
 

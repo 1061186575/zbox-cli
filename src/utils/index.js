@@ -1,4 +1,5 @@
 const readline = require("readline");
+const os = require("os");
 const { spawn } = require("child_process");
 
 function question(query) {
@@ -61,8 +62,18 @@ function spawnExec(commandStr, params = [], options = {}) {
     });
 }
 
+function getIps() {
+    try {
+        const interfaces = os.networkInterfaces();
+        return Object.values(interfaces).flat().filter(d => d.family === 'IPv4' && d.address !== '127.0.0.1').map(d => d.address)
+    } catch (e) {
+        console.error(`err`, e);
+    }
+    return [];
+}
 
 module.exports = {
     question,
     spawnExec,
+    getIps,
 }
