@@ -1,11 +1,10 @@
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const { promisify } = require('util');
-const { exec } = require('child_process');
+const formidable = require('formidable');
 
 // 创建服务器函数
-async function createUploadServer(port = 3000, uploadDir = process.cwd()) {
+async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFileSize = 10, maxTotalFileSize = 20) {
     // 确保上传目录存在
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -30,7 +29,7 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd()) {
             res.end(html);
         } else if (req.method === 'POST' && req.url === '/upload') {
             // 处理文件上传
-            await handleFileUpload(req, res, uploadDir);
+            await handleFileUpload(req, res, uploadDir, maxFileSize, maxTotalFileSize);
         } else if (req.method === 'GET' && req.url === '/files') {
             // 返回已上传的文件列表
             const files = getFileList(uploadDir);
@@ -55,112 +54,95 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd()) {
 }
 
 // 处理文件上传
-async function handleFileUpload(req, res, uploadDir) {
+async function handleFileUpload(req, res, uploadDir, maxFileSize = 10, maxTotalFileSize = 20) {
     try {
-        const boundary = req.headers['content-type'].split('boundary=')[1];
-        const body = await getRequestBody(req);
+        const form = new formidable.IncomingForm({
+            uploadDir: uploadDir,
+            keepExtensions: true,
+            maxFileSize: maxFileSize * 1024 * 1024 * 1024,
+            maxTotalFileSize: maxTotalFileSize * 1024 * 1024 * 1024,
+            multiples: true,
+        });
 
-        if (!boundary) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: '无效的Content-Type' }));
-            return;
-        }
+        const uploadedFiles = [];
 
-        const files = parseMultipartData(body, boundary, uploadDir);
+        form.parse(req, (err, fields, files) => {
+            if (err) {
+                console.error('上传失败:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ error: err.message }));
+                return;
+            }
 
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({
-            success: true,
-            message: `成功上传 ${files.length} 个文件`,
-            files: files
-        }));
+            // 处理上传的文件
+            const fileArray = files.files || [];
+            const folderFileArray = files.folderFiles || [];
+
+            // 合并所有文件
+            const allFiles = [...fileArray, ...folderFileArray];
+
+            allFiles.forEach(file => {
+                if (file && file.filepath) {
+                    const originalName = file.originalFilename || file.newFilename;
+                    const finalPath = handleFilePlacement(file, originalName, uploadDir);
+
+                    uploadedFiles.push({
+                        originalName: originalName,
+                        savedPath: finalPath,
+                        size: file.size
+                    });
+                }
+            });
+
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({
+                success: true,
+                message: `成功上传 ${uploadedFiles.length} 个文件`,
+                files: uploadedFiles
+            }));
+        });
+
     } catch (error) {
         console.error('上传失败:', error);
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: '上传失败: ' + error.message }));
+        res.end(JSON.stringify({ error: error.message }));
     }
 }
 
-// 获取请求体
-function getRequestBody(req) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        req.on('data', chunk => chunks.push(chunk));
-        req.on('end', () => resolve(Buffer.concat(chunks)));
-        req.on('error', reject);
-    });
-}
+// 处理文件放置和冲突解决
+function handleFilePlacement(file, originalName, uploadDir) {
+    const tempPath = file.filepath;
 
-// 解析 multipart/form-data
-function parseMultipartData(buffer, boundary, uploadDir) {
-    const boundaryBuffer = Buffer.from('--' + boundary);
-    const parts = [];
-    let start = 0;
-
-    while (start < buffer.length) {
-        const boundaryIndex = buffer.indexOf(boundaryBuffer, start);
-        if (boundaryIndex === -1) break;
-
-        if (start !== 0) {
-            const part = buffer.slice(start, boundaryIndex);
-            parts.push(part);
+    // 确定最终路径
+    let finalPath;
+    if (originalName && originalName.includes('/')) {
+        // 文件夹上传，保持目录结构
+        finalPath = path.join(uploadDir, originalName);
+        const dir = path.dirname(finalPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
         }
-
-        start = boundaryIndex + boundaryBuffer.length;
+    } else {
+        // 单文件上传
+        finalPath = path.join(uploadDir, path.basename(originalName || file.newFilename));
     }
 
-    const uploadedFiles = [];
+    // 处理文件名冲突
+    if (fs.existsSync(finalPath)) {
+        const ext = path.extname(finalPath);
+        const name = path.basename(finalPath, ext);
+        const dir = path.dirname(finalPath);
+        let counter = 1;
+        do {
+            finalPath = path.join(dir, `${name}-${counter}${ext}`);
+            counter++;
+        } while (fs.existsSync(finalPath));
+    }
 
-    parts.forEach(part => {
-        const headerEnd = part.indexOf('\r\n\r\n');
-        if (headerEnd === -1) return;
+    // 移动文件到最终位置
+    fs.renameSync(tempPath, finalPath);
 
-        const headers = part.slice(0, headerEnd).toString();
-        const content = part.slice(headerEnd + 4, part.length - 2);
-
-        const filenameMatch = headers.match(/filename="(.+?)"/);
-        const nameMatch = headers.match(/name="(.+?)"/);
-
-        if (filenameMatch && filenameMatch[1] && nameMatch) {
-            const filename = filenameMatch[1];
-            const fieldName = nameMatch[1];
-
-            // 处理文件夹上传（包含路径）
-            let filePath;
-            if (fieldName === 'folderFiles' && filename.includes('/')) {
-                // 文件夹上传，保持目录结构
-                filePath = path.join(uploadDir, filename);
-                const dir = path.dirname(filePath);
-                if (!fs.existsSync(dir)) {
-                    fs.mkdirSync(dir, { recursive: true });
-                }
-            } else {
-                // 单文件上传
-                filePath = path.join(uploadDir, path.basename(filename));
-            }
-
-            // 避免文件名冲突
-            if (fs.existsSync(filePath)) {
-                const ext = path.extname(filename);
-                const name = path.basename(filename, ext);
-                const dir = path.dirname(filePath);
-                let counter = 1;
-                do {
-                    filePath = path.join(dir, `${name}-${counter}${ext}`);
-                    counter++;
-                } while (fs.existsSync(filePath));
-            }
-
-            fs.writeFileSync(filePath, content);
-            uploadedFiles.push({
-                originalName: filename,
-                savedPath: path.relative(uploadDir, filePath),
-                size: content.length
-            });
-        }
-    });
-
-    return uploadedFiles;
+    return finalPath;
 }
 
 // 获取文件列表
@@ -179,7 +161,8 @@ function getFileList(dir, relativePath = '') {
                 name: item,
                 type: 'directory',
                 path: path.join(relativePath, item),
-                children: getFileList(dir, path.join(relativePath, item))
+                modified: stat.mtime,
+                // children: getFileList(dir, path.join(relativePath, item))
             });
         } else {
             files.push({

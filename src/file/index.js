@@ -94,7 +94,14 @@ file
     .description('启动文件上传服务器，支持上传文件和文件夹')
     .option('-p, --port <port>', '指定服务端口', '3000')
     .option('-d, --dir <directory>', '指定文件保存目录', process.cwd())
+    .option('--maxFileSize <size>', '单个文件最大大小 (GB)', '10')
+    .option('--maxTotalFileSize <size>', '总文件最大大小 (GB)', '20')
     .action(options => {
         const uploadServer = require('./upload')
-        uploadServer(options.port, options.dir)
+        uploadServer(
+            options.port,
+            options.dir,
+            parseInt(options.maxFileSize),
+            parseInt(options.maxTotalFileSize)
+        )
     })
