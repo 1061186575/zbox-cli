@@ -1,6 +1,6 @@
 {
     "name": "zbox-cli",
-    "version": "0.1.5-beta.2",
+    "version": "0.1.5-beta.3",
     "description": "A collection of utility tools for file/git/scp operations, and more",
     "main": "src/index.js",
     "bin": {
@@ -15,12 +15,13 @@
         "release": "npm run test && npm publish"
     },
     "dependencies": {
-        "commander": "^9.0.2",
         "axios": "^1.4.0",
+        "commander": "^9.0.2",
         "m3u8-parser": "^7.0.0"
     },
     "devDependencies": {
         "eslint": "^9.39.2",
+        "formidable": "^3.5.4",
         "jest": "^30.2.0",
         "prettier": "^3.7.4"
     },
