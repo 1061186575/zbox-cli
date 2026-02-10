@@ -6,6 +6,17 @@ require('./git');
 require('./ke');
 require('./file');
 
+
+program
+    .command('update')
+    .option('-g, --global <global>', '是否全局安装 (true/false)',true)
+    .option('-r, --register <register>', '指定源','https://registry.npmjs.org/')
+    .description('更新 zbox-cli')
+    .action((options) => {
+        require('./command/updateZbox')(options)
+    })
+
+
 // 启动一个 Node.js http 服务
 program
     .command('http')
