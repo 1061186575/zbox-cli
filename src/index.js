@@ -1,6 +1,7 @@
 const { program } = require('commander');
 
-// alias b='node ./bin/zbox'
+// node ./bin/zbox -h
+// npx zbox -h
 
 require('./git');
 require('./ke');

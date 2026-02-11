@@ -4,6 +4,7 @@ const { program } = require('commander');
 const pkg = require('../package.json');
 
 // node ./bin/zbox -h
+// npx zbox -h
 
 program
   .name('zbox')
