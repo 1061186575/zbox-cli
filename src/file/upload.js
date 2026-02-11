@@ -66,6 +66,8 @@ async function handleFileUpload(req, res, uploadDir, maxFileSize = 10, maxTotalF
             maxFileSize: maxFileSize * 1024 * 1024 * 1024,
             maxTotalFileSize: maxTotalFileSize * 1024 * 1024 * 1024,
             multiples: true,
+            allowEmptyFiles: true,
+            minFileSize: 0,
         });
 
         const uploadedFiles = [];

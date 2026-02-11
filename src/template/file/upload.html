@@ -432,7 +432,7 @@
 
         setTimeout(() => {
             messageDiv.remove();
-        }, 5000);
+        }, type === 'error' ? 15000 : 5000);
     }
 
     // 显示进度条
