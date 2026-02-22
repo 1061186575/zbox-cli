@@ -141,7 +141,7 @@ async function restore(directoryPath, recordFileName, base64) {
     } else {
         console.log('Files restored successfully.')
     }
-    fs.rmSync(nameFilePath)
+    fs.unlinkSync(nameFilePath)
     console.log(`delete ${nameFilePath}`)
 }
 
