@@ -7,10 +7,9 @@ git
     .description('QA 分支发布工具，先合并 master 到当前分支, 然后合并当前分支到 QA 分支')
     .option('-b, --branch <branch>', '指定 qa 分支名称', 'qa')
     .option('-m, --master <master>', '指定 master 分支名称', 'master')
+    .option('--noMergeMaster', '不合并 master 到当前分支',  false)
     .action(options => {
-        const targetBranch = options.branch;
-        const masterBranch = options.master;
-        require('./qaRelease')(targetBranch, masterBranch);
+        require('./qaRelease')(options.branch, options.master, options.noMergeMaster);
     });
 
 git

@@ -1,6 +1,6 @@
 {
     "name": "zbox-cli",
-    "version": "0.1.3",
+    "version": "0.1.6-beta.3",
     "description": "A collection of utility tools for file/git/scp operations, and more",
     "main": "src/index.js",
     "bin": {
@@ -15,8 +15,9 @@
         "release": "npm run test && npm publish"
     },
     "dependencies": {
-        "commander": "^9.0.2",
         "axios": "^1.4.0",
+        "commander": "^9.0.2",
+        "formidable": "^3.5.4",
         "m3u8-parser": "^7.0.0"
     },
     "devDependencies": {
@@ -45,10 +46,10 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/1061186575/zbox-cli"
+        "url": "git+https://github.com/1061186575/zbox-cli.git"
     },
     "bugs": {
         "url": ""
     },
-    "homepage": ""
+    "homepage": "https://www.npmjs.com/package/zbox-cli"
 }
