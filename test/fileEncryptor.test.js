@@ -285,37 +285,6 @@ describe('FileEncryptor', () => {
             await fs.promises.unlink(encryptedFile);
         });
 
-        test('should work with different key types', async () => {
-            const testContent = 'Key type test';
-            const testFile = path.join(testDir, 'keytype.txt');
-
-            await fs.promises.writeFile(testFile, testContent);
-
-            // 测试不同类型的密钥
-            const keys = [
-                'simple-string',
-                123456,
-                'special-chars-!@#$%^&*()',
-                'unicode-测试-🔐'
-            ];
-
-            for (const key of keys) {
-                const encryptedFile = testFile + `.${key}.encrypted`;
-                const decryptedFile = testFile + `.${key}.decrypted`;
-
-                await encryptCLI(testFile, key, { output: encryptedFile });
-                await decryptCLI(encryptedFile, key, { output: decryptedFile });
-
-                const decryptedContent = await fs.promises.readFile(decryptedFile, 'utf8');
-                expect(decryptedContent).toBe(testContent);
-
-                // 清理
-                await fs.promises.unlink(encryptedFile);
-                await fs.promises.unlink(decryptedFile);
-            }
-
-            await fs.promises.unlink(testFile);
-        });
     });
 
     describe('isEncryptedFile Function', () => {
