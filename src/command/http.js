@@ -1,4 +1,5 @@
 const http = require('http');
+
 function main(port, response) {
 
     const server = http.createServer((req, res) => {
@@ -14,7 +15,25 @@ function main(port, response) {
             res.end();
             return;
         }
-        
+
+        // 响应不同状态码
+        if (req.url.startsWith('/timeout')) {
+            return;
+        } else if (req.url.startsWith('/404')) {
+            res.writeHead(404);
+            res.end('Not Found');
+            return;
+        } else if (req.url.startsWith('/400')) {
+            res.writeHead(400);
+            res.end('Bad Request');
+            return;
+        } else if (req.url.startsWith('/500')) {
+            res.writeHead(500);
+            res.end('Internal Server Error');
+            return;
+        }
+
+        // 响应指定内容
         if (response) {
             res.writeHead(200);
             try {
