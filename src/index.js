@@ -50,3 +50,11 @@ program
     .option('--content <content>')
     .option('--dot <dot>')
     .action(require('./command/md5'))
+
+// 生成 TOTP 验证码
+program
+    .command('TOTP')
+    .description('生成 TOTP 验证码')
+    .option('--step <step>', '时间步长', 30)
+    .option('--digits <digits>', '验证码长度', 6)
+    .action(require('./command/TOTP'))
