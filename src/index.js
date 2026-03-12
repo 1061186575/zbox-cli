@@ -4,8 +4,8 @@ const { program } = require('commander');
 // npx zbox -h
 
 require('./git');
-require('./ke');
 require('./file');
+require('./ke');
 
 
 program

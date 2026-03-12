@@ -2,6 +2,8 @@ const { program } = require('commander');
 
 const git = program.command('git');
 
+git.description('执行 git 操作');
+
 git
     .command('qa')
     .description('QA 分支发布工具，先合并 master 到当前分支, 然后合并当前分支到 QA 分支')

@@ -5,6 +5,8 @@ const { readFileSync } = require('fs');
 
 const file = program.command('file');
 
+file.description('执行文件操作');
+
 // 文件随机重命名工具
 file
     .command('rr') // randomRename
