@@ -58,3 +58,19 @@ program
     .option('--step <step>', '时间步长', 30)
     .option('--digits <digits>', '验证码长度', 6)
     .action(require('./command/TOTP'))
+
+// 确定性密码生成器
+program
+    .command('generatePassword')
+    .description('基于主密码和网站名称生成确定性密码')
+    .option('--no-uppercase', '不包含大写字母')
+    .option('--no-lowercase', '不包含小写字母')
+    .option('--no-digits', '不包含数字')
+    .option('--no-symbols', '不包含特殊字符')
+    .option('--showEntropy', '显示密码强度分析', true)
+    .option('-s, --site <site>', '网站/服务名称')
+    .option('-m, --masterKey <masterKey>', '主密码')
+    .option('--length <length>', '密码长度 (4-128)', '16')
+    .option('--username <username>', '登录用户名/邮箱', '')
+    .option('--pwdVersion <pwdVersion>', '密码版本号 (修改密码时递增即可)', '1')
+    .action(require('./command/generatePassword'))
