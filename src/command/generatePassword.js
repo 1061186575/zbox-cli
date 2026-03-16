@@ -26,15 +26,6 @@ function generateDeterministicPassword(masterKey, site, options = {}) {
         iterations = 100000 // PBKDF2 迭代次数
     } = options;
 
-    // 参数验证
-    if (length < 4 || length > 128) {
-        throw new Error('密码长度必须在 4-128 之间');
-    }
-
-    if (!includeUppercase && !includeLowercase && !includeDigits && !includeSymbols) {
-        throw new Error('至少需要包含一种字符类型');
-    }
-
     // 构建字符集
     let charset = '';
     const requiredTypes = [];
@@ -57,10 +48,8 @@ function generateDeterministicPassword(masterKey, site, options = {}) {
     }
 
     // 使用 PBKDF2 基于主密码和网站名称生成确定性的随机种子
-    const salt = Buffer.from(`${site}-${username}-${pwdVersion}`, 'utf8');
+    const salt = Buffer.from(`${site}|${username}|${pwdVersion}`, 'utf8');
     const derivedKey = crypto.pbkdf2Sync(masterKey, salt, iterations, length * 2, 'sha256');
-
-    console.log(`derivedKey`, derivedKey.toString('base64'));
 
     return generatePasswordFromSeed(derivedKey, charset, length, requiredTypes);
 }
@@ -133,12 +122,29 @@ async function main(options = {}) {
         const length = parseInt(lengthStr);
         const pwdVersion = parseInt(pwdVersionStr);
 
+        // 验证长度参数
         if (isNaN(length)) {
-            console.error('参数错误：长度必须是数字');
+            console.error('❌ 参数错误：密码长度必须是数字');
             return;
         }
+        if (length < 4 || length > 128) {
+            console.error('❌ 参数错误：密码长度必须在 4-128 之间');
+            return;
+        }
+
+        // 验证版本号参数
         if (isNaN(pwdVersion)) {
-            console.error('参数错误：密码版本必须是数字');
+            console.error('❌ 参数错误：密码版本号必须是数字');
+            return;
+        }
+        if (pwdVersion < 1) {
+            console.error('❌ 参数错误：密码版本号必须大于等于 1');
+            return;
+        }
+
+        // 验证字符类型参数
+        if (!uppercase && !lowercase && !digits && !symbols) {
+            console.error('❌ 参数错误：至少需要包含一种字符类型（大写字母、小写字母、数字、特殊字符）');
             return;
         }
 
