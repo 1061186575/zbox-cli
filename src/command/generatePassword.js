@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { question } = require("../utils");
+const { question, secretQuestion } = require("../utils");
 
 /**
  * 确定性安全密码生成器
@@ -104,6 +104,7 @@ function getStrengthLevel(entropy) {
     return '非常强';
 }
 
+// 使用 PBKDF2 算法生成，无法逆向推导
 async function main(options = {}) {
     try {
         const {
@@ -162,7 +163,7 @@ async function main(options = {}) {
 
         // 如果没有提供主密码，提示输入
         if (!actualMasterKey) {
-            actualMasterKey = (await question('请输入主密码: ')).trim();
+            actualMasterKey = (await secretQuestion('请输入主密码 (输入时不可见): ')).trim();
             if (!actualMasterKey) {
                 console.error('主密码不能为空');
                 return;
@@ -182,6 +183,7 @@ async function main(options = {}) {
 
         console.log('\n🔐 密码生成完成：', password);
 
+        let strengthStr = '';
         if (showEntropy) {
             // 计算并显示密码强度
             let charset = '';
@@ -193,14 +195,20 @@ async function main(options = {}) {
             const entropy = calculateEntropy(charset, length);
             const strength = getStrengthLevel(entropy);
 
-            console.log(`\n📊 密码强度分析:`);
-            console.log(`   字符集大小: ${charset.length}`);
-            console.log(`   密码长度: ${length}`);
-            console.log(`   熵值: ${entropy.toFixed(1)} bits`);
-            console.log(`   强度等级: ${strength}`);
+            // console.log(`\n📊 密码强度分析:`);
+            // console.log(`   字符集大小: ${charset.length}`);
+            // console.log(`   密码长度: ${length}`);
+            // console.log(`   熵值: ${entropy.toFixed(1)} bits`);
+            // console.log(`   强度等级: ${strength}`);
+            if (strength === '非常强') {
+                strengthStr += '✅ '
+            }
+            strengthStr += `密码强度等级: ${strength}`;
         }
 
-        console.log('\n✅ 使用 PBKDF2 算法生成，无法逆向推导');
+        console.log(`\n${strengthStr}`);
+
+        return password;
 
     } catch (error) {
         console.error('❌ 密码生成失败:', error.message);

@@ -15,6 +15,39 @@ function question(query) {
     })
 }
 
+/**
+ * 安全的提问函数：输入时不显示字符
+ */
+function secretQuestion(query) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise(resolve => {
+        // 先打印问题
+        process.stdout.write(query);
+
+        // 在 readline 的内部实现中临时“切断”输出流
+        const oldWrite = rl._writeToOutput;
+        rl._writeToOutput = function (stringToWrite) {
+            // 如果是换行符则输出，否则屏蔽（这样就不会显示输入的密码了）
+            if (stringToWrite === '\r\n' || stringToWrite === '\n') {
+                oldWrite.call(rl, stringToWrite);
+            } else if (stringToWrite.indexOf(query) !== -1) {
+                // 允许打印问题本身
+                oldWrite.call(rl, stringToWrite);
+            }
+            // 其他内容（即用户输入的字符）全部忽略，不往屏幕写
+        };
+
+        rl.question(query, (answer) => {
+            rl.close();
+            resolve(answer);
+        });
+    });
+}
+
 function spawnExec(commandStr, params = [], options = {}) {
     return new Promise((resolve, reject) => {
         // 合并默认配置和用户配置
@@ -88,6 +121,7 @@ function formatDateTime(input = new Date()) {
 
 module.exports = {
     question,
+    secretQuestion,
     spawnExec,
     getIps,
     formatDateTime,
