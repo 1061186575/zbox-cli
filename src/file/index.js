@@ -107,3 +107,11 @@ file
             parseInt(options.maxTotalFileSize)
         )
     })
+
+// 计算文件 MD5 值
+file
+    .command('md5 [filePath]')
+    .description('计算文件的 MD5 值，支持超大文件')
+    .action(async (filePath) => {
+        await require('./md5')(filePath);
+    })
