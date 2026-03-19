@@ -115,3 +115,16 @@ file
     .action(async (filePath) => {
         await require('./md5')(filePath);
     })
+
+// 视频合并工具
+file
+    .command('videoMerge')
+    .description('合并指定目录下的所有视频文件为一个视频文件')
+    .option('-d, --dir <directory>', '指定视频文件目录', process.cwd())
+    .option('-s, --sort <sortBy>', '排序方式: name(文件名), ctime(创建时间), mtime(修改时间)', 'name')
+    .option('-o, --output <path>', '输出文件路径', './merged-video.mp4')
+    .option('--ffmpeg <path>', '指定 FFmpeg 可执行文件路径', 'ffmpeg')
+    .option('-f, --force', '强制执行，不显示确认提示', false)
+    .action(async (options) => {
+        await require('./videoMerge')(options);
+    })

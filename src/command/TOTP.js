@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { question, formatDateTime } = require("../utils");
+const { secretQuestion, formatDateTime } = require("../utils");
 
 /**
  * 将 Base32 编码的字符串解码为 Buffer
@@ -78,8 +78,8 @@ async function main(options) {
         digits,
     } = options;
 
-    // 不允许通过命令传入密钥, 防止意外泄露
-    let secret = await question('Please enter your secret key (base32): ');
+    // 不允许通过命令参数传入密钥, 防止意外泄露
+    let secret = await secretQuestion('Please enter your secret key (base32): ');
     if (!secret.length) {
         return console.log('Secret cannot be empty');
     }
