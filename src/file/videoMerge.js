@@ -18,6 +18,8 @@ async function videoMerge(options) {
         const ffmpegPath = options.ffmpeg ? path.resolve(options.ffmpeg) : 'ffmpeg';
         const force = options.force || false;
 
+        const keepVideoList = options.keepVideoList || false;
+
         // 验证目录是否存在
         if (!fs.existsSync(targetDir)) {
             console.error(`❌ 目录不存在: ${targetDir}`);
@@ -80,7 +82,11 @@ async function videoMerge(options) {
         } finally {
             // 清理临时文件
             if (fs.existsSync(fileListPath)) {
-                fs.unlinkSync(fileListPath);
+                if (keepVideoList) {
+                    console.log(`📝 保留文件列表: ${fileListPath}`);
+                } else {
+                    fs.unlinkSync(fileListPath);
+                }
             }
         }
 

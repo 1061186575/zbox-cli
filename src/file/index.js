@@ -125,6 +125,7 @@ file
     .option('-o, --output <path>', '输出文件路径（默认：视频目录下的 merged-video.mp4）')
     .option('--ffmpeg <path>', '指定 FFmpeg 可执行文件路径')
     .option('-f, --force', '强制执行，不显示确认提示', false)
+    .option('--keep-video-list', '保留 video_list.txt 文件不删除', false)
     .action(async (options) => {
         await require('./videoMerge')(options);
     })
