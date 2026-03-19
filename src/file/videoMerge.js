@@ -11,16 +11,32 @@ const VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm
  */
 async function videoMerge(options) {
     try {
-        const targetDir = options.dir || process.cwd();
+        const targetDir = path.resolve(options.dir) || process.cwd();
         const sortBy = options.sort || 'name';
-        const outputPath = options.output || path.join(targetDir, 'merged_video.mp4');
-        const ffmpegPath = options.ffmpeg || 'ffmpeg';
+        // 如果没有指定输出路径，默认放在视频文件目录下
+        const outputPath = options.output ? path.resolve(options.output) : path.join(targetDir, 'merged-video.mp4');
+        const ffmpegPath = options.ffmpeg ? path.resolve(options.ffmpeg) : 'ffmpeg';
         const force = options.force || false;
 
         // 验证目录是否存在
         if (!fs.existsSync(targetDir)) {
             console.error(`❌ 目录不存在: ${targetDir}`);
             return;
+        }
+
+        // 检查输出文件是否已存在（前置检查）
+        if (fs.existsSync(outputPath)) {
+            if (force) {
+                fs.unlinkSync(outputPath);
+            } else {
+                const overwrite = await question(`输出文件已存在: ${outputPath}\n是否覆盖? (y/n): `);
+                if (overwrite.toLowerCase() !== 'y') {
+                    console.log('❌ 操作取消');
+                    return;
+                }
+                // 立即删除输出文件，避免在扫描时被包含
+                fs.unlinkSync(outputPath);
+            }
         }
 
         // 获取视频文件列表
@@ -37,29 +53,11 @@ async function videoMerge(options) {
             console.log(`  ${index + 1}. ${file.name} (${file.sizeStr})`);
         });
 
-        // 检查输出文件是否已存在
-        if (fs.existsSync(outputPath) && !force) {
-            const overwrite = await question(`输出文件已存在: ${outputPath}\n是否覆盖? (y/n): `);
-            if (overwrite.toLowerCase() !== 'y') {
-                console.log('❌ 操作取消');
-                return;
-            }
-        }
-
-        // 确认合并
-        if (!force) {
-            const confirm = await question(`是否继续合并视频? (y/n): `);
-            if (confirm.toLowerCase() !== 'y') {
-                console.log('❌ 操作取消');
-                return;
-            }
-        }
-
         // 检查 FFmpeg 是否可用
         await checkFFmpeg(ffmpegPath);
 
         // 生成文件列表
-        const fileListPath = await createFileList(videoFiles);
+        const fileListPath = createFileList(videoFiles);
 
         try {
             // 执行合并
@@ -145,7 +143,6 @@ function getVideoFiles(dirPath, sortBy) {
  */
 async function checkFFmpeg(ffmpegPath) {
     try {
-        console.log(`🔍 检查 FFmpeg: ${ffmpegPath}`);
         await spawnExec(ffmpegPath, ['-version'], { stdio: 'pipe' });
         console.log('✅ FFmpeg 可用');
     } catch (error) {
@@ -158,7 +155,7 @@ async function checkFFmpeg(ffmpegPath) {
  * @param {Array} videoFiles - 视频文件数组
  * @returns {string} 文件列表路径
  */
-async function createFileList(videoFiles) {
+function createFileList(videoFiles) {
     const listContent = videoFiles.map(file => `file '${file.path.replace(/'/g, "'\\''")}'`).join('\n');
     const listPath = path.join(process.cwd(), `video_list_${Date.now()}.txt`);
 
