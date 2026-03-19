@@ -17,6 +17,10 @@ async function main(filePath, options = {}) {
         }
         return await fileMd5(filePath);
     }
+    return await textMd5(options);
+}
+
+async function textMd5(options) {
     let input;
     if (options.content) {
         input = options.content;
@@ -119,7 +123,6 @@ function calculateFileMd5(filePath) {
  */
 async function fileMd5(filePath) {
     try {
-
         if (!filePath) {
             console.log('❌ 文件路径不能为空');
             return;
@@ -143,4 +146,8 @@ async function fileMd5(filePath) {
     }
 }
 
-module.exports = main;
+module.exports = {
+    main,
+    textMd5,
+    fileMd5,
+};

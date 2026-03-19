@@ -49,7 +49,7 @@ program
     .option('-l, --length <length>', '输出长度', 32)
     .option('--content <content>', '指定要计算的 md5 字符串')
     .option('--filePath [filePath]', '指定文件路径, 用于计算文件的 MD5 值，支持超大文件, 如果没给参数值会要求输入文件路径')
-    .action(require('./command/md5'))
+    .action(require('./command/md5').main)
 
 
 // 生成 TOTP 验证码

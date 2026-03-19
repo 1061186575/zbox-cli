@@ -7,7 +7,7 @@ jest.mock('../src/utils', () => ({
 }));
 
 
-const md5Command = require('../src/command/md5');
+const md5Command = require('../src/command/md5').textMd5;
 
 describe('MD5 Command', () => {
     beforeEach(() => {
