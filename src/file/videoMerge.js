@@ -26,6 +26,10 @@ async function videoMerge(options) {
 
         // 检查输出文件是否已存在（前置检查）
         if (fs.existsSync(outputPath)) {
+            if (fs.statSync(outputPath).isDirectory()) {
+                console.error(`❌ 输出路径错误, 不能是一个目录: ${outputPath}`);
+                return;
+            }
             if (force) {
                 fs.unlinkSync(outputPath);
             } else {
