@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const fileMd5 = require('../src/command/md5').fileMd5;
-// const fileMd5 = require('../src/file/md5');
 
 // Mock console.log to capture output
 const originalLog = console.log;

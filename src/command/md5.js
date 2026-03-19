@@ -143,6 +143,7 @@ async function fileMd5(filePath) {
 
     } catch (error) {
         console.error(`❌ ${error.message}`);
+        throw error;
     }
 }
 

@@ -113,7 +113,7 @@ file
     .command('md5 [filePath]')
     .description('计算文件的 MD5 值，支持超大文件')
     .action(async (filePath) => {
-        await require('./md5')(filePath);
+        await require('../command/md5').fileMd5(filePath);
     })
 
 // 视频合并工具
