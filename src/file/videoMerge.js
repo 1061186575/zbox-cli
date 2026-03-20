@@ -62,6 +62,14 @@ async function videoMerge(options) {
         // 检查 FFmpeg 是否可用
         await checkFFmpeg(ffmpegPath);
 
+        if (!force) {
+            const overwrite = await question(`是否继续? (y/n): `);
+            if (overwrite.toLowerCase() !== 'y') {
+                console.log('❌ 操作取消');
+                return;
+            }
+        }
+
         // 生成文件列表
         const fileListPath = createFileList(videoFiles);
 
