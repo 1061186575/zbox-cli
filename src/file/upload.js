@@ -100,6 +100,8 @@ async function handleFileUpload(req, res, uploadDir, maxFileSize = 10, maxTotalF
                 }
             });
 
+            console.log(`成功上传 ${uploadedFiles.length} 个文件`);
+
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({
                 success: true,
