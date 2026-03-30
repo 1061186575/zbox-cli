@@ -5,3 +5,4 @@ require('./command');
 require('./git');
 require('./file');
 require('./ke');
+require('./local');
