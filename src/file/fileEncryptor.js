@@ -21,6 +21,7 @@ class FileEncryptor {
      * @param {string} [extension] - 加密文件后缀
      */
     async process(inputPath, operation, options = {}) {
+        inputPath = path.resolve(inputPath);
         const {
             outputPath,
             recursive = true,
