@@ -27,30 +27,29 @@ if (fs.existsSync(localCommandPath) && fs.statSync(localCommandPath).isDirectory
             ],
         }
          */
-        let main
         let { description, options = [] } = module
-
-        if (typeof module === 'function') {
-            main = module
-        } else {
-            let key = 'main' // 默认导出方法名称是 main
-            // 如果只导出一个就用这一个
-            if (Object.keys(module).length === 1) {
-                key = Object.keys(module)[0]
-            }
-            let cmdName = path.parse(filename).name
-            main = module[key] || module[cmdName]
-            if (typeof main !== 'function') {
-                console.error(`请在 ${filename} 文件里面导出 ${key} 或者 ${cmdName} 方法`)
-                return;
-            }
-        }
 
         let res = local
             .command(path.parse(filename).name)
             .description(description || '')
             // .option('--url <url>', 'url option')
             .action(options => {
+                let main
+                if (typeof module === 'function') {
+                    main = module
+                } else {
+                    let key = 'main' // 默认导出方法名称是 main
+                    // 如果只导出一个就用这一个
+                    if (Object.keys(module).length === 1) {
+                        key = Object.keys(module)[0]
+                    }
+                    let cmdName = path.parse(filename).name
+                    main = module[key] || module[cmdName]
+                    if (typeof main !== 'function') {
+                        console.error(`请在 ${filename} 文件里面导出 ${key} 或者 ${cmdName} 方法`)
+                        return;
+                    }
+                }
                 main(options)
             });
         options.forEach(item => {
