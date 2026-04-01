@@ -7,6 +7,7 @@ const { program } = require('commander');
 const configPath = path.join(os.homedir(), '.zbox-cli-local-command.json');
 // 默认的本地命令目录
 const defaultLocalCommandDir = path.join(os.homedir(), '.zbox-cli-local-command');
+let cmdLoadErrMsg = '';
 
 /**
  * 读取配置文件，获取本地命令目录列表
@@ -158,6 +159,25 @@ local.command('list')
         });
     });
 
+local.command('cmdLoadErrMsg')
+    .description('列出加载错误的本地命令文件')
+    .action(() => {
+        console.log(cmdLoadErrMsg);
+    });
+
+// 获取模块里面的执行函数
+function getMain(module, key = 'main') {
+    if (typeof module === 'function') {
+        return module;
+    }
+    const { mainName } = module;
+    // 如果只导出一个就用这一个
+    if (Object.keys(module).length === 1) {
+        key = Object.keys(module)[0];
+    }
+    return module[mainName] || module[key];
+}
+
 // 扫描并注册本地命令
 const localCommandDirs = getLocalCommandDirs();
 
@@ -187,46 +207,36 @@ if (localCommandDirs.length > 0) {
                 /*
                 module.exports = {
                     main,
-                    cmdName: 'xxAction',
+                    cmdName: 'xxxCmd',
+                    mainName: 'main',
                     description: 'description',
                     options: [
                         {
-                            key: 'url',
+                            name: 'url',
                             desc: 'url 参数'
                         }
                     ],
                 }
                  */
+                let main = getMain(module);
                 const { cmdName, description, options = [] } = module;
-                const command = cmdName || getCommandName(filePath);
 
+                if (typeof main !== 'function') {
+                    cmdLoadErrMsg += `${filePath} 文件加载失败, 请导出 main 方法, 或者导出 mainName 指定 main 方法名称\n`
+                    return;
+                }
+
+                const command = cmdName || getCommandName(filePath);
                 const res = local
                     .command(command)
                     .description(description || '')
                     .action(cmdOptions => {
-                        let main;
-
-                        if (typeof module === 'function') {
-                            main = module;
-                        } else {
-                            let key = 'main'; // 默认导出方法名称是 main
-                            // 如果只导出一个就用这一个
-                            if (Object.keys(module).length === 1) {
-                                key = Object.keys(module)[0];
-                            }
-                            main = module[key] || module[cmdName];
-                            if (typeof main !== 'function') {
-                                console.error(`请在 ${filePath} 文件里面导出 ${key} 或者 ${cmdName} 方法`);
-                                return;
-                            }
-                        }
-
                         main(cmdOptions);
                     });
 
                 // 添加选项
                 options.forEach(item => {
-                    res.option(`--${item.key} <${item.key}>`, item.desc || '');
+                    res.option(`--${item.name} <${item.name}>`, item.desc || '');
                 });
             } catch (error) {
                 console.error(`加载本地命令失败 ${filePath}:`, error);
