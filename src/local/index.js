@@ -10,35 +10,35 @@ const defaultLocalCommandDir = path.join(os.homedir(), '.zbox-cli-local-command'
 let cmdLoadErrMsg = '';
 
 /**
- * 读取配置文件，获取本地命令目录列表
+ * 读取配置文件，获取本地命令目录和文件列表
  */
-function getLocalCommandDirs() {
-    let dirs = [];
+function getLocalCommandPaths() {
+    let paths = [];
 
-    // 如果配置文件存在，读取配置的目录
+    // 如果配置文件存在，读取配置的目录和文件
     if (fs.existsSync(configPath)) {
         try {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            dirs = config.dirs || [];
+            paths = config.paths || [];
         } catch (error) {
             console.error('读取本地命令配置文件失败:', error.message);
         }
     }
 
     // 如果默认目录存在且不在配置中，添加默认目录
-    if (fs.existsSync(defaultLocalCommandDir) && !dirs.includes(defaultLocalCommandDir)) {
-        dirs.unshift(defaultLocalCommandDir);
+    if (fs.existsSync(defaultLocalCommandDir) && !paths.includes(defaultLocalCommandDir)) {
+        paths.unshift(defaultLocalCommandDir);
     }
 
-    return dirs.filter(dir => fs.existsSync(dir));
+    return paths.filter(p => fs.existsSync(p));
 }
 
 /**
  * 保存配置到文件
  */
-function saveConfig(dirs) {
+function saveConfig(paths) {
     try {
-        const config = { dirs };
+        const config = { paths };
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
         return true;
     } catch (error) {
@@ -90,72 +90,77 @@ function getCommandName(filePath) {
 const local = program.command('local');
 local.description('本地命令管理工具');
 
-// local add 命令 - 添加本地命令目录
+// local add 命令 - 添加本地命令文件或目录
 local.command('add')
-    .description('添加本地命令目录')
-    .argument('<dir>', '要添加的目录路径')
-    .action((dir) => {
-        const absolutePath = path.resolve(dir);
+    .description('添加本地命令文件或目录')
+    .argument('<path>', '要添加的文件或目录路径')
+    .action((inputPath) => {
+        const absolutePath = path.resolve(inputPath);
 
         if (!fs.existsSync(absolutePath)) {
-            console.error(`目录不存在: ${absolutePath}`);
+            console.error(`路径不存在: ${absolutePath}`);
             return;
         }
 
-        if (!fs.statSync(absolutePath).isDirectory()) {
-            console.error(`不是一个目录: ${absolutePath}`);
+        const stat = fs.statSync(absolutePath);
+        const isFile = stat.isFile();
+
+        const currentPaths = getLocalCommandPaths();
+
+        if (currentPaths.includes(absolutePath)) {
+            console.log(`路径已存在于配置中: ${absolutePath}`);
             return;
         }
 
-        const currentDirs = getLocalCommandDirs();
+        currentPaths.push(absolutePath);
 
-        if (currentDirs.includes(absolutePath)) {
-            console.log(`目录已存在于配置中: ${absolutePath}`);
-            return;
-        }
-
-        currentDirs.push(absolutePath);
-
-        if (saveConfig(currentDirs)) {
-            console.log(`成功添加目录: ${absolutePath}`);
+        if (saveConfig(currentPaths)) {
+            const pathType = isFile ? '文件' : '目录';
+            console.log(`成功添加${pathType}: ${absolutePath}`);
         }
     });
 
-// local delete 命令 - 删除本地命令目录
+// local delete 命令 - 删除本地命令文件或目录
 local.command('delete')
-    .description('删除本地命令目录')
-    .argument('<dir>', '要删除的目录路径')
-    .action((dir) => {
-        const absolutePath = path.resolve(dir);
-        let currentDirs = getLocalCommandDirs();
+    .description('删除本地命令文件或目录')
+    .argument('<path>', '要删除的文件或目录路径')
+    .action((inputPath) => {
+        const absolutePath = path.resolve(inputPath);
+        let currentPaths = getLocalCommandPaths();
 
-        const index = currentDirs.indexOf(absolutePath);
+        const index = currentPaths.indexOf(absolutePath);
         if (index === -1) {
-            console.error(`目录不在配置中: ${absolutePath}`);
+            console.error(`路径不在配置中: ${absolutePath}`);
             return;
         }
 
-        currentDirs.splice(index, 1);
+        currentPaths.splice(index, 1);
 
-        if (saveConfig(currentDirs)) {
-            console.log(`成功从配置文件中移除目录: ${absolutePath}`);
+        if (saveConfig(currentPaths)) {
+            console.log(`成功从配置文件中移除路径: ${absolutePath}`);
         }
     });
 
-// local list 命令 - 列出配置的目录
+// local list 命令 - 列出配置的文件和目录
 local.command('list')
-    .description('列出所有配置的本地命令目录')
+    .description('列出所有配置的本地命令文件和目录')
     .action(() => {
         console.log('配置文件路径:', configPath);
-        const dirs = getLocalCommandDirs();
-        if (dirs.length === 0) {
-            console.log('没有配置任何可用的本地命令目录');
+        const paths = getLocalCommandPaths();
+        if (paths.length === 0) {
+            console.log('没有配置任何可用的本地命令文件或目录');
             return;
         }
 
-        console.log('配置的本地命令目录:');
-        dirs.forEach((dir, index) => {
-            console.log(`  ${index + 1}. ${dir}`);
+        console.log('配置的本地命令文件和目录:');
+        paths.forEach((pathItem, index) => {
+            try {
+                const stat = fs.statSync(pathItem);
+                const type = stat.isFile() ? '[文件]' : '[目录]';
+                console.log(`  ${index + 1}. ${type} ${pathItem}`);
+            } catch (error) {
+                console.log(`  ${index + 1}. [无效] ${pathItem}`);
+            }
         });
     });
 
@@ -179,25 +184,34 @@ function getMain(module, key = 'main') {
 }
 
 // 扫描并注册本地命令
-const localCommandDirs = getLocalCommandDirs();
+const localCommandDirs = getLocalCommandPaths();
 
 if (localCommandDirs.length > 0) {
-    localCommandDirs.forEach(dir => {
-        if (!fs.existsSync(dir)) {
+    localCommandDirs.forEach(p => {
+        if (!fs.existsSync(p)) {
+            return;
+        }
+
+        const stat = fs.statSync(p);
+        if (stat.isFile()) {
+            loadCmd(p);
             return;
         }
 
         let fileList;
         try {
-            fileList = fs.readdirSync(dir);
+            fileList = fs.readdirSync(p);
         } catch (error) {
-            console.error(`读取目录失败 ${dir}:`, error.message);
+            console.error(`读取目录失败 ${p}:`, error.message);
             return;
         }
 
         fileList.forEach(filename => {
-            const filePath = path.join(dir, filename);
+            const filePath = path.join(p, filename);
+            loadCmd(filePath);
+        });
 
+        function loadCmd(filePath) {
             if (!isValidCommand(filePath)) {
                 return;
             }
@@ -241,6 +255,6 @@ if (localCommandDirs.length > 0) {
             } catch (error) {
                 console.error(`加载本地命令失败 ${filePath}:`, error);
             }
-        });
+        }
     });
 }
