@@ -23,18 +23,6 @@ program
     })
 
 
-// 网络设备发现工具
-program
-    .command('findDevice')
-    .option('-p, --port <port>', '目标端口号', '80')
-    .option('--path <path>', '目标路径', '/')
-    .option('-t, --timeout <timeout>', '请求超时时间(毫秒)', '3000')
-    .option('-c, --concurrency <concurrency>', '并发扫描数量', '20')
-    .option('--customNetworks <networks>', '自定义网络列表 (JSON格式)')
-    .description('扫描本地网络中运行指定服务的设备')
-    .action(require('./findDevice'))
-
-
 // MD5 哈希计算工具
 program
     .command('md5 [filePath]')
@@ -57,6 +45,7 @@ program
 
 
 // 确定性密码生成器
+// 生成 6 位数的纯数字密码示例: zbox generatePassword --no-uppercase --no-lowercase --no-symbols --length 6
 program
     .command('generatePassword')
     .description('基于主密码和网站名称生成确定性密码')
