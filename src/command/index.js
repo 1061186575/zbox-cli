@@ -1,4 +1,5 @@
 const { program } = require('commander');
+const { question, secretQuestion } = require("../utils");
 
 // 更新 zbox-cli
 program
@@ -79,12 +80,11 @@ program
     .option('-t, --text <text>', '要加密的字符串')
     .option('-k, --key <key>', '加密密钥')
     .action(async (options) => {
-        const { question } = require('../utils');
         const { encryptStringCLI } = require('./stringEncryptor');
 
         try {
-            const text = options.text || await question('请输入要加密的字符串: ');
-            const key = options.key || await question('请输入加密密钥: ');
+            const text = options.text || (await question('请输入要加密的字符串: ')).trim();
+            const key = options.key || (await secretQuestion('请输入加密密钥(输入时不显示): ')).trim();
 
             await encryptStringCLI(text, key);
         } catch (error) {
@@ -100,12 +100,11 @@ program
     .option('-t, --text <text>', '要解密的字符串')
     .option('-k, --key <key>', '解密密钥')
     .action(async (options) => {
-        const { question } = require('../utils');
         const { decryptStringCLI } = require('./stringEncryptor');
 
         try {
-            const text = options.text || await question('请输入要解密的字符串: ');
-            const key = options.key || await question('请输入解密密钥: ');
+            const text = options.text || (await question('请输入要解密的字符串: ')).trim();
+            const key = options.key || (await secretQuestion('请输入解密密钥(输入时不显示): ')).trim();
 
             await decryptStringCLI(text, key);
         } catch (error) {

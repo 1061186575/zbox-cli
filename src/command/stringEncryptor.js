@@ -1,4 +1,8 @@
 const crypto = require('crypto');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
 class StringEncryptor {
     constructor(key) {
@@ -104,6 +108,38 @@ class StringEncryptor {
     }
 }
 
+/**
+ * 复制文本到系统粘贴板
+ * @param {string} text - 要复制的文本
+ * @returns {boolean} - 是否成功复制
+ */
+function copyToClipboard(text) {
+    try {
+        const platform = os.platform();
+
+        if (platform === 'darwin') {
+            // macOS
+            execSync('pbcopy', { input: text, encoding: 'utf8' });
+        } else if (platform === 'linux') {
+            // Linux - 尝试 xclip，如果不可用则尝试 xsel
+            try {
+                execSync('xclip -selection clipboard', { input: text, encoding: 'utf8' });
+            } catch (error) {
+                execSync('xsel --clipboard --input', { input: text, encoding: 'utf8' });
+            }
+        } else if (platform === 'win32') {
+            // Windows
+            execSync('clip', { input: text, encoding: 'utf8' });
+        } else {
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 // ==================== CLI 接口函数 ====================
 
 /**
@@ -123,6 +159,17 @@ async function encryptStringCLI(plaintext, key) {
     console.log('🔒 加密完成！');
     console.log('明文:', plaintext);
     console.log('密文:', encrypted);
+
+    // 如果内容很长, 部分终端输出的内容可能和实际内容不一致, 所以直接复制到粘贴板
+    const copied = copyToClipboard(encrypted);
+    if (copied) {
+        console.log('📋 密文已复制到粘贴板');
+    } else {
+        console.log('⚠️  无法复制到粘贴板，请手动复制文件内容');
+        const encryptedPath = path.join(process.cwd(), `encrypted-${Date.now()}.txt`);
+        fs.writeFileSync(encryptedPath, encrypted);
+        console.log(`✅ 密文已保存到 ${encryptedPath} 文件`);
+    }
 
     return encrypted;
 }
@@ -149,6 +196,17 @@ async function decryptStringCLI(ciphertext, key) {
     console.log('🔓 解密完成！');
     console.log('密文:', ciphertext);
     console.log('明文:', decrypted);
+
+    // 如果内容很长, 部分终端输出的内容可能和实际内容不一致, 所以直接复制到粘贴板
+    const copied = copyToClipboard(decrypted);
+    if (copied) {
+        console.log('📋 明文已复制到粘贴板');
+    } else {
+        console.log('⚠️  无法复制到粘贴板，请手动复制文件内容');
+        const decryptedPath = path.join(process.cwd(), `-${Date.now()}-`, 'decrypted.txt');
+        fs.writeFileSync(decryptedPath, decrypted);
+        console.log(`✅ 密文已保存到 ${decryptedPath} 文件`);
+    }
 
     return decrypted;
 }
