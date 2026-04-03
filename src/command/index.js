@@ -70,3 +70,45 @@ program
     .option('--username <username>', '登录用户名/邮箱', '')
     .option('--pwdVersion <pwdVersion>', '密码版本号 (修改密码时递增即可)', '1')
     .action(require('./generatePassword'))
+
+
+// 字符串加密工具
+program
+    .command('encrypt')
+    .description('加密字符串')
+    .option('-t, --text <text>', '要加密的字符串')
+    .option('-k, --key <key>', '加密密钥')
+    .action(async (options) => {
+        const { question } = require('../utils');
+        const { encryptStringCLI } = require('./stringEncryptor');
+
+        try {
+            const text = options.text || await question('请输入要加密的字符串: ');
+            const key = options.key || await question('请输入加密密钥: ');
+
+            await encryptStringCLI(text, key);
+        } catch (error) {
+            console.error('❌ 加密失败:', error.message);
+        }
+    })
+
+
+// 字符串解密工具
+program
+    .command('decrypt')
+    .description('解密字符串')
+    .option('-t, --text <text>', '要解密的字符串')
+    .option('-k, --key <key>', '解密密钥')
+    .action(async (options) => {
+        const { question } = require('../utils');
+        const { decryptStringCLI } = require('./stringEncryptor');
+
+        try {
+            const text = options.text || await question('请输入要解密的字符串: ');
+            const key = options.key || await question('请输入解密密钥: ');
+
+            await decryptStringCLI(text, key);
+        } catch (error) {
+            console.error('❌ 解密失败:', error.message);
+        }
+    })
