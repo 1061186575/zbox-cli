@@ -1,8 +1,7 @@
 const crypto = require('crypto');
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { copyToClipboard } = require("../utils");
 
 class StringEncryptor {
     constructor(key) {
@@ -108,37 +107,6 @@ class StringEncryptor {
     }
 }
 
-/**
- * 复制文本到系统粘贴板
- * @param {string} text - 要复制的文本
- * @returns {boolean} - 是否成功复制
- */
-function copyToClipboard(text) {
-    try {
-        const platform = os.platform();
-
-        if (platform === 'darwin') {
-            // macOS
-            execSync('pbcopy', { input: text, encoding: 'utf8' });
-        } else if (platform === 'linux') {
-            // Linux - 尝试 xclip，如果不可用则尝试 xsel
-            try {
-                execSync('xclip -selection clipboard', { input: text, encoding: 'utf8' });
-            } catch (error) {
-                execSync('xsel --clipboard --input', { input: text, encoding: 'utf8' });
-            }
-        } else if (platform === 'win32') {
-            // Windows
-            execSync('clip', { input: text, encoding: 'utf8' });
-        } else {
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
 
 // ==================== CLI 接口函数 ====================
 
