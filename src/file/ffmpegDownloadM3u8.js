@@ -70,10 +70,10 @@ async function main(options) {
         fs.mkdirSync(saveDir)
     }
 
-    ffDownload(urls, urlsName)
+    ffDownload(urls, urlsName, options)
 }
 
-async function ffDownload(urls, urlsName = []) {
+async function ffDownload(urls, urlsName = [], options = {}) {
     const controller = new TaskController(maxConcurrentTasks);
 
     for (let i = 0; i < urls.length; i++) {
@@ -91,12 +91,22 @@ async function ffDownload(urls, urlsName = []) {
             if (fs.existsSync(filePath)) {
                 console.log(`第${cur}个文件已存在:`, filePath);
             } else {
+                const {copy, threads} = options
                 let args = [
                     '-i', url, // -i 参数必须要放 -c 参数前面
-                    '-c', 'copy',
-                    '-threads', '4',
-                    filePath
+                    // '-c', 'copy',
+                    // '-threads', '4',
+                    // filePath
                 ]
+                if (copy) {
+                    args.push('-c')
+                    args.push('-copy')
+                }
+                if (threads) {
+                    args.push('-threads')
+                    args.push(threads)
+                }
+                args.push(filePath)
                 console.log('args', args)
                 await spawnSync(ffmpegFile, args, {
                     stdio: 'inherit'

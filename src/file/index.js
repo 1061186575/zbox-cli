@@ -68,6 +68,8 @@ file
     .option('--saveDir <saveDir>', '指定下载目录, 可以是相对路径也可以是绝对路径', 'ffmpegDownloadOutput')
     .option('--ffmpegFile <ffmpegFile>', '指定 ffmpeg 可执行文件')
     .option('--maxConcurrentTasks <maxConcurrentTasks>', '设置最大并发下载数量(m3u8 片段)', '3')
+    .option('--no-copy', '不开启 -c copy', true)
+    .option('--threads <threads>', '多线程下载', '4')
     .option('-p, --printInputFileTemplate', '打印 inputFile 参数对应的文件模板')
     .action(require('./ffmpegDownloadM3u8'))
 
