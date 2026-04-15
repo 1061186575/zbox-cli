@@ -100,7 +100,7 @@ async function ffDownload(urls, urlsName = [], options = {}) {
                 ]
                 if (copy) {
                     args.push('-c')
-                    args.push('-copy')
+                    args.push('copy')
                 }
                 if (threads) {
                     args.push('-threads')
