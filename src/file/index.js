@@ -31,6 +31,8 @@ file
     .option('--no-recursive', '不递归处理子目录')
     .option('--overwrite', '覆盖已存在的文件')
     .action(async (input, options) => {
+        input = path.resolve(input);
+        console.log('加密的文件或目录路径: ', input);
         const key = await question('加密密钥:')
         await require('./fileEncryptor').encryptCLI(input, key, options);
         console.log('✅ 加密完成！');
@@ -44,9 +46,15 @@ file
     .option('--no-recursive', '不递归处理子目录')
     .option('--overwrite', '覆盖已存在的文件')
     .action(async (input, options) => {
+        input = path.resolve(input);
+        console.log('解密的文件或目录路径: ', input);
         const key = await question('解密密钥:')
-        await require('./fileEncryptor').decryptCLI(input, key, options);
-        console.log('✅ 解密完成！');
+        const unableAuthenticateData = await require('./fileEncryptor').decryptCLI(input, key, options);
+        if (unableAuthenticateData) {
+            console.log('✅ 解密完成！');
+        } else {
+            console.log('❌ 解密失败！');
+        }
     });
 
 

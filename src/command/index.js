@@ -1,4 +1,5 @@
 const { program } = require('commander');
+const { question, secretQuestion } = require("../utils");
 
 // 更新 zbox-cli
 program
@@ -20,18 +21,6 @@ program
     .action((options) => {
         require('./http')(options.port, options.response)
     })
-
-
-// 网络设备发现工具
-program
-    .command('findDevice')
-    .option('-p, --port <port>', '目标端口号', '80')
-    .option('--path <path>', '目标路径', '/')
-    .option('-t, --timeout <timeout>', '请求超时时间(毫秒)', '3000')
-    .option('-c, --concurrency <concurrency>', '并发扫描数量', '20')
-    .option('--customNetworks <networks>', '自定义网络列表 (JSON格式)')
-    .description('扫描本地网络中运行指定服务的设备')
-    .action(require('./findDevice'))
 
 
 // MD5 哈希计算工具
@@ -56,6 +45,7 @@ program
 
 
 // 确定性密码生成器
+// 生成 6 位数的纯数字密码示例: zbox generatePassword --no-uppercase --no-lowercase --no-symbols --length 6
 program
     .command('generatePassword')
     .description('基于主密码和网站名称生成确定性密码')
@@ -70,3 +60,43 @@ program
     .option('--username <username>', '登录用户名/邮箱', '')
     .option('--pwdVersion <pwdVersion>', '密码版本号 (修改密码时递增即可)', '1')
     .action(require('./generatePassword'))
+
+
+// 字符串加密工具
+program
+    .command('encrypt')
+    .description('加密字符串')
+    .option('-t, --text <text>', '要加密的字符串')
+    .option('-k, --key <key>', '加密密钥')
+    .action(async (options) => {
+        const { encryptStringCLI } = require('./stringEncryptor');
+
+        try {
+            const text = options.text || (await question('请输入要加密的字符串: ')).trim();
+            const key = options.key || (await secretQuestion('请输入加密密钥(输入时不显示): ')).trim();
+
+            await encryptStringCLI(text, key);
+        } catch (error) {
+            console.error('❌ 加密失败:', error.message);
+        }
+    })
+
+
+// 字符串解密工具
+program
+    .command('decrypt')
+    .description('解密字符串')
+    .option('-t, --text <text>', '要解密的字符串')
+    .option('-k, --key <key>', '解密密钥')
+    .action(async (options) => {
+        const { decryptStringCLI } = require('./stringEncryptor');
+
+        try {
+            const text = options.text || (await question('请输入要解密的字符串: ')).trim();
+            const key = options.key || (await secretQuestion('请输入解密密钥(输入时不显示): ')).trim();
+
+            await decryptStringCLI(text, key);
+        } catch (error) {
+            console.error('❌ 解密失败:', error.message);
+        }
+    })

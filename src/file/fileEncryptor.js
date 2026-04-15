@@ -10,6 +10,8 @@ class FileEncryptor {
         this.ivLength = 16;
         this.saltLength = 64;
         this.tagLength = 16;
+        this.unableAuthenticateData = false; // 解密密钥是否正确
+        this.unableAuthenticateDataMessage = 'Unsupported state or unable to authenticate data';
     }
 
     /**
@@ -21,6 +23,7 @@ class FileEncryptor {
      * @param {string} [extension] - 加密文件后缀
      */
     async process(inputPath, operation, options = {}) {
+        inputPath = path.resolve(inputPath);
         const {
             outputPath,
             recursive = true,
@@ -35,12 +38,16 @@ class FileEncryptor {
                 // 处理单个文件
                 const output = outputPath || this.getOutputPath(inputPath, operation, extension);
                 await this.processFile(inputPath, output, operation, overwrite);
-                console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}完成: ${inputPath} -> ${output}`);
+                if (!this.unableAuthenticateData) {
+                    console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}完成: ${inputPath} -> ${output}`);
+                }
             } else if (stats.isDirectory()) {
                 // 处理目录
                 const outputDir = outputPath || this.getOutputPath(inputPath, operation, extension);
                 await this.processDirectory(inputPath, outputDir, operation, { recursive, extension, overwrite });
-                console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}目录完成: ${inputPath} -> ${outputDir}`);
+                if (!this.unableAuthenticateData) {
+                    console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}目录完成: ${inputPath} -> ${outputDir}`);
+                }
             } else {
                 throw new Error('输入路径必须是文件或目录');
             }
@@ -53,6 +60,7 @@ class FileEncryptor {
      * 处理单个文件
      */
     async processFile(inputFile, outputFile, operation, overwrite = false) {
+        if (this.unableAuthenticateData) return;
         // 检查输出文件是否存在
         if (!overwrite && fs.existsSync(outputFile)) {
             throw new Error(`输出文件已存在: ${outputFile}，使用 --overwrite 参数覆盖`);
@@ -192,6 +200,9 @@ class FileEncryptor {
 
             return decrypted;
         } catch (error) {
+            if (error.message.includes(this.unableAuthenticateDataMessage)) {
+                this.unableAuthenticateData = true;
+            }
             throw new Error(`解密失败: ${error.message}`);
         }
     }
@@ -266,6 +277,7 @@ async function decryptCLI(inputPath, key, options = {}) {
         extension: options.extension,
         overwrite: options.overwrite
     });
+    return this.unableAuthenticateData;
 }
 
 // 导出模块

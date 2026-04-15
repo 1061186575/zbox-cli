@@ -83,6 +83,10 @@ async function videoMerge(options) {
             console.log('✅ 视频合并完成!');
 
             // 显示输出文件信息
+            const totalInputSize = videoFiles.reduce((sum, file) => sum + file.size, 0);
+            const inputSizeStr = formatFileSize(totalInputSize);
+            console.log(`📊 合并前文件大小: ${inputSizeStr}`);
+
             const outputStats = fs.statSync(outputPath);
             const outputSize = formatFileSize(outputStats.size);
             console.log(`📊 合并后文件大小: ${outputSize}`);
