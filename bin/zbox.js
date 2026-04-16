@@ -5,6 +5,7 @@ const pkg = require('../package.json');
 
 // node ./bin/zbox -h
 // npx zbox -h
+// alias lz='node /Users/ke/project/zBox/bin/zbox.js'
 
 program
   .name('zbox')

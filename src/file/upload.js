@@ -188,7 +188,7 @@ function getFileList(dir, relativePath = '') {
 
 // 生成上传页面 HTML
 function getUploadHTML() {
-    return fs.readFileSync(path.join(__dirname, '../template/file/upload.html'), 'utf-8');
+    return fs.readFileSync(path.join(__dirname, 'upload.html'), 'utf8');
 }
 
 module.exports = createUploadServer;
