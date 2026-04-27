@@ -35,11 +35,10 @@ async function checkDevice(ip, port) {
     }
 }
 
-async function startScan() {
-    const prefixes = getAllLocalIPPrefixes();
-    const ports = [80, 8080, 3000];
-
-    console.log(`检测到以下网段: ${prefixes.join(', ')}`);
+async function startScan(prefixes, ports) {
+    if (typeof prefixes === 'string') {
+        prefixes = [prefixes];
+    }
 
     for (const prefix of prefixes) {
         console.log(`\n正在扫描网段: ${prefix}.xx ...`);
@@ -60,9 +59,10 @@ async function startScan() {
     console.log('\n所有网段扫描完成。');
 }
 
-async function startMoreScan() {
-    const prefixes = getAllLocalIPPrefixes();
-    const ports = [80, 8080, 3000];
+async function startMoreScan(prefixes, ports) {
+    if (typeof prefixes === 'string') {
+        prefixes = [prefixes];
+    }
 
     for (let prefix of prefixes) {
         let arr = prefix.split('.')
@@ -88,4 +88,31 @@ async function startMoreScan() {
     console.log('\n所有网段扫描完成。');
 }
 
-startMoreScan();
+async function main(options) {
+    const defaultPorts = [80, 3000, 8080];
+    const ports = options.ports ? options.ports.split(',').map(p => parseInt(p.trim())) : defaultPorts;
+    const prefixes = options.prefix ? options.prefix.split(',').map(p => p.trim()) : getAllLocalIPPrefixes();
+    let more = options.more;
+
+    console.log('扫码端口号:', ports);
+
+    if (options.prefix) {
+        for (let i = 0; i < prefixes.length; i++) {
+            const prefix = prefixes[i];
+            if (prefix.split('.').length !== 3) {
+                console.log(`[提示]: 只支持传入网络号 / 子网 (如: 192.168.10)`);
+                return;
+            }
+        }
+    } else {
+        console.log(`自动检测到以下网段: `, prefixes);
+    }
+
+    if (more) {
+        await startMoreScan(prefixes, ports);
+    } else {
+        await startScan(prefixes, ports);
+    }
+}
+
+module.exports = main;

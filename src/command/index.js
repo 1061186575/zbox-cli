@@ -100,3 +100,13 @@ program
             console.error('❌ 解密失败:', error.message);
         }
     })
+
+
+// 扫描局域网设备
+program
+    .command('scanDevice')
+    .description('扫描局域网设备')
+    .option('-p, --ports <ports>', '扫描的端口号，传入多个用逗号分隔', '80,3000,8080')
+    .option('--prefix <prefix>', '扫码网络号 / 子网 (如: 192.168.10)，传入多个用逗号分隔，不传则自动获取')
+    .option('--more', '扫描地址块 / 网段前缀 (192.168.0.0/16)', false)
+    .action(require('./scanDevice'))
