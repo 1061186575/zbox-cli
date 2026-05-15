@@ -9,16 +9,26 @@ const { existsSync } = require('fs');
  */
 
 // 配置参数
-const SOURCE_DIR = 'D:\\SOURCE_DIR';
-const TARGET_DIR = 'D:\\TARGET_DIR';
+let TARGET_DIR = '';
 const SUB_DIR_NAME = 'dir';
 const MAX_FILE_COUNT = 500;
 const MAX_TOTAL_SIZE_GB = 4;
 const isRename = true // rename or copy
 
-async function main() {
+// main({
+//     dir: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514\\test',
+//     output: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514\\test',
+//     recursive: true,
+//     sort: 'exif'
+// })
+
+async function main(options) {
     try {
         console.log('开始文件分类处理...');
+        const SOURCE_DIR = path.resolve(options.dir);
+        TARGET_DIR = path.resolve(options.output);
+        const recursive = options.recursive;
+        const sort = options.sort;
 
         // 检查源目录是否存在
         if (!existsSync(SOURCE_DIR)) {
@@ -26,16 +36,27 @@ async function main() {
             return;
         }
 
-        // 创建目标目录
-        await fs.mkdir(TARGET_DIR, { recursive: true });
-        console.log(`目标目录已创建: ${TARGET_DIR}`);
+        if (!existsSync(TARGET_DIR)) {
+            // 创建目标目录
+            await fs.mkdir(TARGET_DIR, { recursive: true });
+            console.log(`目标目录已创建: ${TARGET_DIR}`);
+        }
 
         // 获取所有文件并统计信息
-        const files = await getAllFiles(SOURCE_DIR);
+        const files = await getAllFiles(SOURCE_DIR, recursive);
         console.log(`找到 ${files.length} 个文件`);
 
-        // 按更新时间排序（最新的优先）
-        files.sort((a, b) => b.mtimeMs - a.mtimeMs);
+        if (sort === 'exif') {
+            await sortByExif(files)
+        } else if (sort === 'mtime') {
+            files.sort((a, b) => a.mtimeMs - b.mtimeMs);
+        } else if (sort === 'ctime') {
+            files.sort((a, b) => a.ctimeMs - b.ctimeMs);
+        } else if (sort === 'birthtime') {
+            files.sort((a, b) => a.birthtimeMs - b.birthtimeMs);
+        } else {
+            files.sort((a, b) => a.name.localeCompare(b.name));
+        }
 
         // 分类处理文件
         await classifyFiles(files);
@@ -46,15 +67,63 @@ async function main() {
     }
 }
 
-async function getAllFiles(dirPath, allFiles = []) {
+// 遍历读取每个文件的拍摄时间
+async function sortByExif(files) {
+    const { ExifTool } = require("exiftool-vendored");
+    const exiftool = new ExifTool();
+
+    try {
+        // 可以使用 Promise.all 并发读取，但为了避免占用过多内存，当前使用 for...of 串行读取
+        for (const file of files) {
+            let shootingTimeMs = 0;
+
+            try {
+                const tags = await exiftool.read(file.path);
+
+                // 优先读取拍摄时间(DateTimeOriginal)，其次是创建时间(CreateDate)，视频通常带有 MediaCreateDate
+                const dateObj = tags.DateTimeOriginal || tags.CreateDate || tags.MediaCreateDate;
+
+                if (dateObj && dateObj.toDate) {
+                    // ExifTool 返回的日期对象带有 toDate() 方法
+                    shootingTimeMs = dateObj.toDate().getTime();
+                } else if (dateObj && typeof dateObj === 'string') {
+                    // 如果是字符串格式，尝试解析
+                    shootingTimeMs = new Date(dateObj).getTime();
+                } else {
+                    // 如果没有 EXIF 数据，降级使用文件系统的时间
+                    shootingTimeMs = file.mtimeMs || file.ctimeMs;
+                }
+            } catch (err) {
+                // 读取元数据失败（如文件损坏），降级使用系统文件时间
+                shootingTimeMs = file.mtimeMs || file.ctimeMs;
+            }
+
+            file.shootingTimeMs = shootingTimeMs;
+        }
+
+        // 3. 按时间从小到大（从旧到新）排序
+        files.sort((a, b) => a.shootingTimeMs - b.shootingTimeMs);
+
+        // 4. 返回纯路径数组
+        return files;
+
+    } finally {
+        // 务必关闭 exiftool 的后台进程，防止内存泄漏
+        await exiftool.end();
+    }
+}
+
+async function getAllFiles(dirPath, recursive, allFiles = []) {
     const items = await fs.readdir(dirPath, { withFileTypes: true });
 
     for (const item of items) {
         const fullPath = path.join(dirPath, item.name);
 
         if (item.isDirectory()) {
-            // 递归处理子目录
-            await getAllFiles(fullPath, allFiles);
+            if (recursive) {
+                // 递归处理子目录
+                await getAllFiles(fullPath, recursive, allFiles);
+            }
         } else {
             // 获取文件信息
             const stats = await fs.stat(fullPath);
@@ -63,7 +132,8 @@ async function getAllFiles(dirPath, allFiles = []) {
                 name: item.name,
                 size: stats.size,
                 mtimeMs: stats.mtimeMs,
-                mtime: stats.mtime
+                ctimeMs: stats.ctimeMs,
+                birthtimeMs: stats.birthtimeMs,
             });
         }
     }
@@ -170,5 +240,4 @@ function formatFileSize(bytes) {
     return `${size.toFixed(2)} ${units[unitIndex]}`;
 }
 
-// 运行程序
-main();
+module.exports = main;

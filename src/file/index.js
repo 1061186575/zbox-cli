@@ -141,11 +141,12 @@ file
     })
 
 file
-    .command('sort')
+    .command('classify')
     .description('对指定目录进行文件数量和文件大小分类(方便上传备份)')
-    .option('-d, --dir <directory>', '指定目录', process.cwd())
-    .option('-s, --sort <sortBy>', '排序方式: exif(拍摄时间), name(文件名), ctime(创建时间), mtime(修改时间)', 'exif')
-    .option('-o, --output <path>', '输出文件路径')
+    .option('-d, --dir <directory>', '指定源目录', process.cwd())
+    .option('-o, --output <directory>', '指定输出目录', process.cwd())
+    .option('-r, --recursive <recursive>', '递归处理子目录', true)
+    .option('-s, --sort <sortBy>', '排序方式: name(文件名), exif(拍摄时间), mtime(内容修改时间), ctime(元数据或内容修改时间), birthtime(创建时间)', 'name')
     .action(async (options) => {
-        await require('./test')(options);
+        await require('./classify')(options);
     })
