@@ -151,6 +151,7 @@ async function main(options = {}) {
 
         let actualMasterKey = masterKey;
         let actualSite = site;
+        let actualUsername = username;
 
         // 如果没有提供网站名称，提示输入
         if (!actualSite) {
@@ -170,10 +171,15 @@ async function main(options = {}) {
             }
         }
 
+        // 如果没有提供用户名，提示输入
+        if (!actualUsername) {
+            actualUsername = (await question('请输入用户名/邮箱(非必填): ')).trim();
+        }
+
         // 生成确定性密码
         const password = generateDeterministicPassword(actualMasterKey, actualSite, {
             length,
-            username,
+            username: actualUsername,
             pwdVersion,
             includeUppercase: uppercase !== false,
             includeLowercase: lowercase !== false,
