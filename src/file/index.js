@@ -139,3 +139,13 @@ file
     .action(async (options) => {
         await require('./videoMerge')(options);
     })
+
+file
+    .command('sort')
+    .description('对指定目录进行文件数量和文件大小分类(方便上传备份)')
+    .option('-d, --dir <directory>', '指定目录', process.cwd())
+    .option('-s, --sort <sortBy>', '排序方式: exif(拍摄时间), name(文件名), ctime(创建时间), mtime(修改时间)', 'exif')
+    .option('-o, --output <path>', '输出文件路径')
+    .action(async (options) => {
+        await require('./test')(options);
+    })
