@@ -142,11 +142,11 @@ file
 
 file
     .command('classify')
-    .description('对指定目录进行文件数量和文件大小分类(方便上传备份)')
+    .description('把指定目录下的所有文件分类到子目录, 确保子目录文件数量和文件大小不超过指定值(方便上传备份)')
     .option('-d, --dir <directory>', '指定源目录', process.cwd())
-    .option('-o, --output <directory>', '指定输出目录', process.cwd())
-    .option('-r, --recursive <recursive>', '递归处理子目录', true)
+    .option('-o, --output <directory>', '指定输出目录(默认和源目录相同)')
     .option('-s, --sort <sortBy>', '排序方式: name(文件名), exif(拍摄时间), mtime(内容修改时间), ctime(元数据或内容修改时间), birthtime(创建时间)', 'name')
+    .option('--exifGroup <exifGroup>', '把没有拍摄时间的文件单独分类(仅exif排序方式生效)', false)
     .action(async (options) => {
         await require('./classify')(options);
     })

@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { existsSync } = require('fs');
+const { question } = require("../utils");
 
 /**
  * 把 SOURCE_DIR 里面的文件按更新时间排序, 然后分类放到 TARGET_DIR 里面,
@@ -10,25 +11,35 @@ const { existsSync } = require('fs');
 
 // 配置参数
 let TARGET_DIR = '';
-const SUB_DIR_NAME = 'dir';
 const MAX_FILE_COUNT = 500;
 const MAX_TOTAL_SIZE_GB = 4;
 const isRename = true // rename or copy
 
 // main({
-//     dir: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514\\test',
-//     output: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514\\test',
-//     recursive: true,
+//     dir: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514',
+//     output: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514',
+//     exifGroup: true,
 //     sort: 'exif'
 // })
 
 async function main(options) {
     try {
-        console.log('开始文件分类处理...');
         const SOURCE_DIR = path.resolve(options.dir);
-        TARGET_DIR = path.resolve(options.output);
-        const recursive = options.recursive;
+        TARGET_DIR = path.resolve(options.output || options.dir);
+        const recursive = true;
         const sort = options.sort;
+        const exifGroup = sort === 'exif' && options.exifGroup;
+        const SUB_DIR_NAME = 'dir';
+
+        console.log('SOURCE_DIR', SOURCE_DIR)
+        console.log('TARGET_DIR', TARGET_DIR)
+        console.log('递归处理子目录:', recursive)
+        console.log('排序方式:', sort)
+
+        if ((await question('请确认以上信息, 是否继续?(y/N) ')).trim() !== 'y') {
+            return;
+        }
+        console.log('开始文件分类处理...');
 
         // 检查源目录是否存在
         if (!existsSync(SOURCE_DIR)) {
@@ -47,7 +58,9 @@ async function main(options) {
         console.log(`找到 ${files.length} 个文件`);
 
         if (sort === 'exif') {
-            await sortByExif(files)
+            // 按拍摄时间从旧到新排序
+            await addShootingTime(files, exifGroup)
+            files.sort((a, b) => a.shootingTimeMs - b.shootingTimeMs);
         } else if (sort === 'mtime') {
             files.sort((a, b) => a.mtimeMs - b.mtimeMs);
         } else if (sort === 'ctime') {
@@ -58,8 +71,12 @@ async function main(options) {
             files.sort((a, b) => a.name.localeCompare(b.name));
         }
 
-        // 分类处理文件
-        await classifyFiles(files);
+        if (exifGroup) {
+            await classifyFiles(files.filter(d => d.shootingTimeMs !== 0), SUB_DIR_NAME);
+            await classifyFiles(files.filter(d => d.shootingTimeMs === 0), `${SUB_DIR_NAME}_没有拍摄时间`);
+        } else {
+            await classifyFiles(files, SUB_DIR_NAME);
+        }
 
         console.log('文件分类完成！');
     } catch (error) {
@@ -68,7 +85,7 @@ async function main(options) {
 }
 
 // 遍历读取每个文件的拍摄时间
-async function sortByExif(files) {
+async function addShootingTime(files, exifGroup = false) {
     const { ExifTool } = require("exiftool-vendored");
     const exiftool = new ExifTool();
 
@@ -90,21 +107,26 @@ async function sortByExif(files) {
                     // 如果是字符串格式，尝试解析
                     shootingTimeMs = new Date(dateObj).getTime();
                 } else {
-                    // 如果没有 EXIF 数据，降级使用文件系统的时间
-                    shootingTimeMs = file.mtimeMs || file.ctimeMs;
+                    if (exifGroup) {
+                        shootingTimeMs = 0;
+                    } else {
+                        // 如果没有 EXIF 数据，降级使用文件系统的时间
+                        shootingTimeMs = file.mtimeMs || file.ctimeMs;
+                    }
                 }
             } catch (err) {
                 // 读取元数据失败（如文件损坏），降级使用系统文件时间
-                shootingTimeMs = file.mtimeMs || file.ctimeMs;
+                if (exifGroup) {
+                    shootingTimeMs = 0;
+                } else {
+                    // 如果没有 EXIF 数据，降级使用文件系统的时间
+                    shootingTimeMs = file.mtimeMs || file.ctimeMs;
+                }
             }
 
             file.shootingTimeMs = shootingTimeMs;
         }
 
-        // 3. 按时间从小到大（从旧到新）排序
-        files.sort((a, b) => a.shootingTimeMs - b.shootingTimeMs);
-
-        // 4. 返回纯路径数组
         return files;
 
     } finally {
@@ -141,7 +163,7 @@ async function getAllFiles(dirPath, recursive, allFiles = []) {
     return allFiles;
 }
 
-async function classifyFiles(files) {
+async function classifyFiles(files, SUB_DIR_NAME) {
     let currentDirIndex = 1;
     let currentBatch = {
         files: [],
@@ -157,7 +179,7 @@ async function classifyFiles(files) {
             (currentBatch.totalSize + file.size) > MAX_TOTAL_SIZE_GB * 1024 * 1024 * 1024) {
 
             // 创建当前批次的目录并复制文件
-            await createAndCopyBatch(currentBatch, currentDirIndex);
+            await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME);
 
             // 重置批次并增加目录索引
             currentBatch = {
@@ -181,11 +203,11 @@ async function classifyFiles(files) {
 
     // 处理最后一批文件
     if (currentBatch.fileCount > 0) {
-        await createAndCopyBatch(currentBatch, currentDirIndex);
+        await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME);
     }
 }
 
-async function createAndCopyBatch(batch, dirIndex) {
+async function createAndCopyBatch(batch, dirIndex, SUB_DIR_NAME) {
     const dirName = `${SUB_DIR_NAME}${dirIndex}`;
     const targetDirPath = path.join(TARGET_DIR, dirName);
 
