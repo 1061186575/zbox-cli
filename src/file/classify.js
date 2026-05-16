@@ -16,6 +16,7 @@ let MAX_TOTAL_SIZE_GB = 4;
 let isCopy = false; // rename or copy
 
 async function main(options) {
+    // console.log('options', options)
     try {
         const SOURCE_DIR = path.resolve(options.dir);
         TARGET_DIR = path.resolve(options.output || options.dir);
@@ -24,8 +25,8 @@ async function main(options) {
         const exifGroup = sort === 'exif' && options.exifGroup;
         isCopy = !!options.copy;
         let SUB_DIR_NAME = options.SUB_DIR_NAME || 'dir';
-        MAX_FILE_COUNT = options.MAX_FILE_COUNT || MAX_FILE_COUNT;
-        MAX_TOTAL_SIZE_GB = options.MAX_TOTAL_SIZE_GB || MAX_TOTAL_SIZE_GB;
+        MAX_FILE_COUNT = parseFloat(options.MAX_FILE_COUNT) || MAX_FILE_COUNT;
+        MAX_TOTAL_SIZE_GB = parseFloat(options.MAX_TOTAL_SIZE_GB) || MAX_TOTAL_SIZE_GB;
 
         console.log('SOURCE_DIR', SOURCE_DIR)
         console.log('TARGET_DIR', TARGET_DIR)
@@ -66,8 +67,11 @@ async function main(options) {
             files.sort((a, b) => a.ctimeMs - b.ctimeMs);
         } else if (sort === 'birthtime') {
             files.sort((a, b) => a.birthtimeMs - b.birthtimeMs);
-        } else {
+        } else if (sort === 'name') {
             files.sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+            console.error('sort 错误')
+            return;
         }
 
         if (exifGroup) {
