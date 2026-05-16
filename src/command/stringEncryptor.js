@@ -171,7 +171,7 @@ async function decryptStringCLI(ciphertext, key) {
         console.log('📋 明文已复制到粘贴板');
     } else {
         console.log('⚠️  无法复制到粘贴板，请手动复制文件内容');
-        const decryptedPath = path.join(process.cwd(), `-${Date.now()}-`, 'decrypted.txt');
+        const decryptedPath = path.join(process.cwd(), `decrypted-${Date.now()}.txt`);
         fs.writeFileSync(decryptedPath, decrypted);
         console.log(`✅ 密文已保存到 ${decryptedPath} 文件`);
     }
