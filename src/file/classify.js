@@ -11,16 +11,9 @@ const { question } = require("../utils");
 
 // 配置参数
 let TARGET_DIR = '';
-const MAX_FILE_COUNT = 500;
-const MAX_TOTAL_SIZE_GB = 4;
-const isRename = true // rename or copy
-
-// main({
-//     dir: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514',
-//     output: 'F:\\backup\\lianlisha_iPhone15_plus_202411_20250514',
-//     exifGroup: true,
-//     sort: 'exif'
-// })
+let MAX_FILE_COUNT = 500;
+let MAX_TOTAL_SIZE_GB = 4;
+let isCopy = false; // rename or copy
 
 async function main(options) {
     try {
@@ -29,12 +22,18 @@ async function main(options) {
         const recursive = true;
         const sort = options.sort;
         const exifGroup = sort === 'exif' && options.exifGroup;
-        const SUB_DIR_NAME = 'dir';
+        isCopy = !!options.copy;
+        let SUB_DIR_NAME = options.SUB_DIR_NAME || 'dir';
+        MAX_FILE_COUNT = options.MAX_FILE_COUNT || MAX_FILE_COUNT;
+        MAX_TOTAL_SIZE_GB = options.MAX_TOTAL_SIZE_GB || MAX_TOTAL_SIZE_GB;
 
         console.log('SOURCE_DIR', SOURCE_DIR)
         console.log('TARGET_DIR', TARGET_DIR)
         console.log('递归处理子目录:', recursive)
         console.log('排序方式:', sort)
+        if (sort === 'exif') {
+            console.log('没有拍摄时间的文件单独分组:', exifGroup)
+        }
 
         if ((await question('请确认以上信息, 是否继续?(y/N) ')).trim() !== 'y') {
             return;
@@ -234,12 +233,12 @@ async function createAndCopyBatch(batch, dirIndex, SUB_DIR_NAME) {
                 counter++;
             }
 
-            if (isRename) {
+            if (isCopy) {
+                await fs.copyFile(file.path, finalTargetPath);
+            } else {
                 await fs.rename(file.path, finalTargetPath, (err) => {
                     if (err) console.log('err', err);
                 });
-            } else {
-                await fs.copyFile(file.path, finalTargetPath);
             }
         } catch (error) {
             console.error(`  复制文件失败: ${file.name}`, error.message);

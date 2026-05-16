@@ -147,6 +147,10 @@ file
     .option('-o, --output <directory>', '指定输出目录(默认和源目录相同)')
     .option('-s, --sort <sortBy>', '排序方式: name(文件名), exif(拍摄时间), mtime(内容修改时间), ctime(元数据或内容修改时间), birthtime(创建时间)', 'name')
     .option('--exifGroup <exifGroup>', '把没有拍摄时间的文件单独分类(仅exif排序方式生效)', false)
+    .option('--copy <copy>', '复制为新文件(默认是移动原文件路径)', false)
+    .option('--SUB_DIR_NAME <SUB_DIR_NAME>', '子目录名称', 'dir')
+    .option('--MAX_FILE_COUNT <MAX_FILE_COUNT>', '子目录最大文件数量', 500)
+    .option('--MAX_TOTAL_SIZE_GB <MAX_TOTAL_SIZE_GB>', '子目录最大总大小(GB)', 4)
     .action(async (options) => {
         await require('./classify')(options);
     })
