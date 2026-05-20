@@ -5,13 +5,13 @@ function main(options) {
     const { global, register } = options;
     const params = [
         'install',
-        'zbox-cli',
+        'zbox-cli@latest',
     ]
     if (global === true || global === 'true') {
         params.push('--global')
     }
     if (register) {
-        params.push(`--register=${register}`)
+        params.push(`--registry=${register}`)
     }
 
     console.log(`npm ${params.join(' ')}`);
