@@ -33,21 +33,28 @@ function main(port, response) {
             return;
         }
 
-        // 响应指定内容
-        if (response) {
+        const sendResponse = (content) => {
             res.writeHead(200);
             try {
-                res.end(JSON.stringify(JSON.parse(response), null, 2));
+                res.end(JSON.stringify(JSON.parse(content), null, 2));
             } catch (e) {
-                res.end(response);
+                res.end(content);
             }
-            return;
-        }
+        };
 
         // 获取请求头
         const headers = req.headers;
 
         if (req.method === 'GET') {
+            const currentUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            const queryResponse = currentUrl.searchParams.get('response');
+
+            // 请求参数中的 response 优先于启动参数 response
+            if (queryResponse || response) {
+                sendResponse(queryResponse || response);
+                return;
+            }
+
             const response = {
                 method: 'GET',
                 url: req.url,
@@ -74,6 +81,23 @@ function main(port, response) {
                 } catch (e) {
                     // 如果不是 JSON，就保持原始字符串
                     parsedBody = body;
+                }
+
+                // 请求参数中的 response 优先于启动参数 response
+                if (
+                    parsedBody &&
+                    typeof parsedBody === 'object' &&
+                    !Array.isArray(parsedBody) &&
+                    parsedBody.response
+                ) {
+                    sendResponse(String(parsedBody.response));
+                    return;
+                }
+
+                // 响应指定内容
+                if (response) {
+                    sendResponse(response);
+                    return;
                 }
 
                 const response = {
