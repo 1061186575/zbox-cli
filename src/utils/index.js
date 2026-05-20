@@ -162,7 +162,27 @@ function copyToClipboard(text) {
             }
         } else if (platform === 'win32') {
             // Windows
-            execSync('clip', { input: text, encoding: 'utf8' });
+
+            // 中文乱码
+            // execSync('clip', { input: text, encoding: 'utf8' });
+
+            // 有前缀空行
+            // Windows: 必须使用带 BOM 的 UTF-16 LE
+            // const bom = Buffer.from([0xff, 0xfe]);                 // UTF-16 LE BOM
+            // const textBuffer = Buffer.from(text, 'utf16le');
+            // const inputBuffer = Buffer.concat([bom, textBuffer]);
+            // execSync('clip', { input: inputBuffer });              // 不指定 encoding
+
+            // 末尾换行+可能报错
+            // execSync(`echo ${text} | clip`, {
+            //     encoding: 'utf8',
+            //     stdio: 'ignore'
+            // });
+
+            // Windows: 使用 PowerShell Set-Clipboard，无 BOM 字符
+            const base64 = Buffer.from(text, 'utf8').toString('base64');
+            const psCommand = `$t=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${base64}')); Set-Clipboard -Value $t`;
+            execSync(`powershell.exe -Command "${psCommand}"`);
         } else {
             return false;
         }

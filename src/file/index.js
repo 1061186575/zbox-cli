@@ -141,11 +141,16 @@ file
     })
 
 file
-    .command('sort')
-    .description('对指定目录进行文件数量和文件大小分类(方便上传备份)')
-    .option('-d, --dir <directory>', '指定目录', process.cwd())
-    .option('-s, --sort <sortBy>', '排序方式: exif(拍摄时间), name(文件名), ctime(创建时间), mtime(修改时间)', 'exif')
-    .option('-o, --output <path>', '输出文件路径')
+    .command('classify')
+    .description('把指定目录下的所有文件分类到子目录, 确保子目录文件数量和文件大小不超过指定值(方便上传备份)')
+    .option('-d, --dir <directory>', '指定源目录', process.cwd())
+    .option('-o, --output <directory>', '指定输出目录(默认和源目录相同)')
+    .option('-s, --sort <sortBy>', '排序方式: name(文件名), exif(拍摄时间), mtime(内容修改时间), ctime(元数据或内容修改时间), birthtime(创建时间)', 'name')
+    .option('--exifGroup', '把没有拍摄时间的文件单独分类(仅exif排序方式生效)', false)
+    .option('--copy', '复制为新文件(默认是移动原文件路径)', false)
+    .option('--SUB_DIR_NAME <SUB_DIR_NAME>', '子目录名称', 'dir')
+    .option('--MAX_FILE_COUNT <MAX_FILE_COUNT>', '子目录最大文件数量', 500)
+    .option('--MAX_TOTAL_SIZE_GB <MAX_TOTAL_SIZE_GB>', '子目录最大总大小(GB)', 4)
     .action(async (options) => {
-        await require('./test')(options);
+        await require('./classify')(options);
     })

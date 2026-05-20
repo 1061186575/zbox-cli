@@ -1,6 +1,7 @@
 const http = require('http');
+const { getIps } = require("../utils");
 
-function main(port, response) {
+function main(port = 80, response) {
 
     const server = http.createServer((req, res) => {
         // 设置响应头
@@ -128,6 +129,9 @@ function main(port, response) {
     server.listen(port, () => {
         console.log(`HTTP 服务已启动，监听端口: ${port}`);
         console.log(`访问地址: http://localhost:${port}`);
+        getIps().forEach(ip => {
+            console.log(`访问地址: http://${ip}:${port}`);
+        })
     });
 
 }
