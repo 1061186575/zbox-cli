@@ -15,6 +15,28 @@ function question(query) {
     })
 }
 
+function multilineQuestion(query, endMarker = 'EOF') {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    const lines = [];
+
+    console.log(`${query}\n输入多行内容，单独输入 ${endMarker} 结束:`);
+
+    return new Promise(resolve => {
+        rl.on('line', (line) => {
+            if (line === endMarker) {
+                rl.close();
+                resolve(lines.join('\n'));
+                return;
+            }
+
+            lines.push(line);
+        });
+    });
+}
+
 /**
  * 安全的提问函数：输入时不显示字符
  */
@@ -153,6 +175,7 @@ function copyToClipboard(text) {
 
 module.exports = {
     question,
+    multilineQuestion,
     secretQuestion,
     spawnExec,
     getIps,

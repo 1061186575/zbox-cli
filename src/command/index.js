@@ -44,6 +44,16 @@ program
     .action(require('./TOTP'))
 
 
+// 生成二维码
+program
+    .command('qrcode')
+    .description('生成二维码')
+    .option('-t, --text <text>', '二维码内容')
+    .option('-o, --output <output>', '输出图片路径')
+    .option('-m, --multiline', '多行输入二维码内容')
+    .action(require('./qrcode'))
+
+
 // 确定性密码生成器
 // 生成 6 位数的纯数字密码示例: zbox generatePassword --no-uppercase --no-lowercase --no-symbols --length 6
 program
