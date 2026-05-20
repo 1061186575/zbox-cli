@@ -22,7 +22,7 @@ function multilineQuestion(query, endMarker = 'EOF') {
     });
     const lines = [];
 
-    console.log(`${query}\n输入多行内容，单独输入 ${endMarker} 结束:`);
+    console.log(`${query} (可输入多行内容，单独输入 ${endMarker} 结束):`);
 
     return new Promise(resolve => {
         rl.on('line', (line) => {
