@@ -88,7 +88,7 @@ function getCommandName(filePath) {
 
 // 创建 local 主命令
 const local = program.command('local');
-local.description('本地命令管理工具');
+local.description('管理与执行本地命令');
 
 // local add 命令 - 添加本地命令文件或目录
 local.command('add')

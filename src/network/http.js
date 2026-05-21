@@ -1,4 +1,4 @@
-const http = require('http');
+const http = require('src/network/http');
 const { getIps } = require("../utils");
 
 function main(port = 80, response) {

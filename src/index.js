@@ -3,6 +3,8 @@
 
 require('./command');
 require('./git');
+require('./network');
+require('./crypto');
 require('./file');
 require('./ke');
 require('./local');
