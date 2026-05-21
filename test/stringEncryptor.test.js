@@ -1,4 +1,4 @@
-const { StringEncryptor, encryptStringCLI, decryptStringCLI, isValidEncryptedString } = require('../src/command/stringEncryptor');
+const { StringEncryptor, encryptStringCLI, decryptStringCLI, isValidEncryptedString } = require('../src/crypto/stringEncryptor');
 
 describe('StringEncryptor', () => {
     const testKey = 'test-encryption-key-123';

@@ -6,7 +6,7 @@ jest.mock('../src/utils', () => ({
     formatDateTime: mockFormatDateTime
 }));
 
-const totpCommand = require('../src/command/TOTP');
+const totpCommand = require('../src/crypto/totp');
 
 describe('TOTP Command', () => {
     const REAL_DATE_NOW = Date.now;

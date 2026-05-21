@@ -8,7 +8,7 @@ jest.mock('../src/utils', () => ({
     secretQuestion: mockSecretQuestion
 }));
 
-const generatePasswordCommand = require('../src/command/generatePassword');
+const generatePasswordCommand = require('../src/crypto/generatePassword');
 
 describe('Generate Password Command', () => {
     beforeEach(() => {
