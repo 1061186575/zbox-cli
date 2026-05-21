@@ -9,22 +9,13 @@ crypto.description('执行文本加解密操作');
 // MD5 哈希计算工具
 crypto
     .command('md5 [filePath]')
-    .description('计算输入内容的 MD5 哈希值')
+    .description('计算输入内容或指定文件的 MD5')
     .option('-i, --iteration <iteration>', '迭代次数', 1)
     .option('-b, --base64', '输出结果转为 base64', false)
     .option('-l, --length <length>', '输出长度', 32)
     .option('--content <content>', '指定要计算的 md5 字符串')
     .option('--filePath [filePath]', '指定文件路径, 用于计算文件的 MD5 值，支持超大文件, 如果没给参数值会要求输入文件路径')
     .action(require('./md5').main)
-
-
-// 生成 TOTP 验证码
-crypto
-    .command('totp')
-    .description('生成 TOTP 验证码')
-    .option('--step <step>', '时间步长', 30)
-    .option('--digits <digits>', '验证码长度', 6)
-    .action(require('./totp'))
 
 // 确定性密码生成器
 // 生成 6 位数的纯数字密码示例: zbox generatePassword --no-uppercase --no-lowercase --no-symbols --length 6
@@ -82,3 +73,11 @@ crypto
             console.error('❌ 解密失败:', error.message);
         }
     })
+
+// 生成 TOTP 验证码
+crypto
+    .command('totp')
+    .description('生成 TOTP 验证码')
+    .option('--step <step>', '时间步长', 30)
+    .option('--digits <digits>', '验证码长度', 6)
+    .action(require('./totp'))
