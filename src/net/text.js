@@ -346,8 +346,9 @@ function sendHtml(res, html) {
     res.end(html);
 }
 
-function main(port = 3000, storage = StorageType.MEMORY) {
-    storage = normalizeStorage(storage);
+function main(options = {}) {
+    const port = options.port || 3000;
+    const storage = normalizeStorage(options.storage || StorageType.MEMORY);
     loadTexts(storage);
 
     const server = http.createServer(async (req, res) => {
@@ -423,6 +424,8 @@ function main(port = 3000, storage = StorageType.MEMORY) {
             console.log(`访问地址: http://${ip}:${port}`);
         });
     });
+
+    return server;
 }
 
 module.exports = main;

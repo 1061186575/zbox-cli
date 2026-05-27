@@ -21,7 +21,7 @@ network
     .option('-s, --storage <storage>', '指定存储方式: memory 或 file', 'memory')
     .description('启动临时文本保存服务')
     .action((options) => {
-        require('./text')(options.port, options.storage)
+        require('./text')(options)
     })
 
 
