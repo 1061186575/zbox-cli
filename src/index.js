@@ -3,7 +3,7 @@
 
 require('./command');
 require('./git');
-require('./network');
+require('./net');
 require('./crypto');
 require('./file');
 require('./ke');

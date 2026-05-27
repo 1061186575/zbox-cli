@@ -1,6 +1,6 @@
 const { program } = require('commander');
 
-const network = program.command('network');
+const network = program.command('net');
 
 network.description('网络服务');
 
