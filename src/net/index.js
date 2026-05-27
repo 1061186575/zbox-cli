@@ -11,7 +11,7 @@ network
     .option('-s, --response <response>', '指定返回的响应体')
     .description('启动 Node.js http 服务')
     .action((options) => {
-        require('./http')(options.port, options.response)
+        require('./http')(options.port)
     })
 
 // 启动一个临时文本保存服务

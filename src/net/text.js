@@ -11,7 +11,7 @@ const StorageType = {
     MEMORY: 'memory',
     FILE: 'file',
 };
-const fileStoragePath = path.join(os.tmpdir(), 'zbox-network-text.json');
+const fileStoragePath = process.env.ZBOX_TEXT_STORAGE_PATH || path.join(os.tmpdir(), 'zbox-network-text.json');
 
 function escapeHtml(value) {
     return String(value)
@@ -60,7 +60,12 @@ function loadTexts(storage) {
         return;
     }
 
-    const data = JSON.parse(fs.readFileSync(fileStoragePath, 'utf8') || '[]');
+    let data;
+    try {
+        data = JSON.parse(fs.readFileSync(fileStoragePath, 'utf8') || '[]');
+    } catch {
+        return;
+    }
 
     if (!Array.isArray(data)) {
         return;
