@@ -110,6 +110,8 @@
         .file-icon { font-size: 1.3em; flex: 0 0 auto; }
         .file-info { flex: 1 1 auto; min-width: 0; }
         .file-name { font-weight: 600; margin-bottom: 5px; word-break: break-all; }
+        .text-file-name { color: #2563eb; cursor: pointer; }
+        .text-file-name:hover { text-decoration: underline; }
         .file-details { font-size: 0.9em; color: #64748b; }
         .file-actions { display: flex; gap: 8px; flex: 0 0 auto; }
         .progress-bar {
@@ -248,6 +250,7 @@
         }
         setupDragAndDrop();
         setupFileInputs();
+        setupTextModal();
     });
 
     function setupDragAndDrop() {
@@ -283,6 +286,22 @@
         document.getElementById('folderInput').addEventListener('change', (e) => {
             handleFileUpload(e.target.files, true);
             e.target.value = '';
+        });
+    }
+
+    function setupTextModal() {
+        const modal = document.getElementById('textModal');
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeTextModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('active')) {
+                closeTextModal();
+            }
         });
     }
 
@@ -344,16 +363,18 @@
             ].filter(Boolean).join(' · ');
             const safeName = escapeHtml(file.name);
             const encodedPath = encodeURIComponent(file.path);
+            const nameHtml = file.type !== 'directory' && file.isText
+                ? `<div class="file-name text-file-name" onclick="event.stopPropagation(); viewTextFile('${encodedPath}', '${safeName}')">${safeName}</div>`
+                : `<div class="file-name">${safeName}</div>`;
 
             return `
                 <div class="file-item ${file.type === 'directory' ? 'directory-item' : ''}" ${file.type === 'directory' ? `onclick="openDirectory('${encodedPath}')"` : ''}>
                     <span class="file-icon">${icon}</span>
                     <div class="file-info">
-                        <div class="file-name">${safeName}</div>
+                        ${nameHtml}
                         <div class="file-details">${details}</div>
                     </div>
                     <div class="file-actions">
-                        ${file.type !== 'directory' && file.isText ? `<button type="button" class="file-action-btn" onclick="event.stopPropagation(); viewTextFile('${encodedPath}', '${safeName}')">查看</button>` : ''}
                         ${file.type !== 'directory' ? `<button type="button" class="file-action-btn" onclick="event.stopPropagation(); downloadFile('${encodedPath}')">下载</button>` : ''}
                     </div>
                 </div>
