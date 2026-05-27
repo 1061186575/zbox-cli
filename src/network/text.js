@@ -1,8 +1,17 @@
 const http = require('http');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { getIps } = require('../utils');
 
 const texts = [];
 const maxTextsLength = 200;
+const textMaxBytes = 10 * 1024 * 1024;
+const StorageType = {
+    MEMORY: 'memory',
+    FILE: 'file',
+};
+const fileStoragePath = path.join(os.tmpdir(), 'zbox-network-text.json');
 
 function escapeHtml(value) {
     return String(value)
@@ -30,6 +39,43 @@ function renderList(items) {
     return items
         .map((text, index) => `<li><span class="index">${index + 1}</span><p>${linkify(text)}</p><button class="copy-button" type="button" data-index="${index}">复制</button><button class="delete-button" type="button" data-index="${index}">删除</button></li>`)
         .join('');
+}
+
+function normalizeStorage(storage) {
+    if (Object.values(StorageType).includes(storage)) {
+        return storage;
+    }
+
+    throw new Error(`storage must be ${StorageType.MEMORY} or ${StorageType.FILE}`);
+}
+
+function trimTexts() {
+    if (texts.length > maxTextsLength) {
+        texts.length = maxTextsLength;
+    }
+}
+
+function loadTexts(storage) {
+    if (storage !== StorageType.FILE || !fs.existsSync(fileStoragePath)) {
+        return;
+    }
+
+    const data = JSON.parse(fs.readFileSync(fileStoragePath, 'utf8') || '[]');
+
+    if (!Array.isArray(data)) {
+        return;
+    }
+
+    texts.splice(0, texts.length, ...data.filter(item => typeof item === 'string'));
+    trimTexts();
+}
+
+function saveTexts(storage) {
+    if (storage !== StorageType.FILE) {
+        return;
+    }
+
+    fs.writeFileSync(fileStoragePath, JSON.stringify(texts, null, 2));
 }
 
 function renderPage() {
@@ -275,7 +321,7 @@ function readBody(req) {
         req.on('data', (chunk) => {
             body += chunk.toString();
 
-            if (body.length > 10 * 1024 * 1024) {
+            if (Buffer.byteLength(body) > textMaxBytes) {
                 reject(new Error('Request body too large'));
                 req.destroy();
             }
@@ -300,7 +346,10 @@ function sendHtml(res, html) {
     res.end(html);
 }
 
-function main(port = 3000) {
+function main(port = 3000, storage = StorageType.MEMORY) {
+    storage = normalizeStorage(storage);
+    loadTexts(storage);
+
     const server = http.createServer(async (req, res) => {
         const currentUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -325,10 +374,9 @@ function main(port = 3000) {
                     return;
                 }
 
-                if (texts.length >= maxTextsLength) {
-                    texts.pop();
-                }
                 texts.unshift(text);
+                trimTexts();
+                saveTexts(storage);
                 sendJson(res, 200, { texts });
             } catch (error) {
                 sendJson(res, 400, { message: error.message });
@@ -349,6 +397,7 @@ function main(port = 3000) {
                 }
 
                 texts.splice(index, 1);
+                saveTexts(storage);
                 sendJson(res, 200, { texts });
             } catch (error) {
                 sendJson(res, 400, { message: error.message });
@@ -365,6 +414,10 @@ function main(port = 3000) {
 
     server.listen(port, () => {
         console.log(`Text 服务已启动，监听端口: ${port}`);
+        console.log(`存储方式: ${storage}`);
+        if (storage === StorageType.FILE) {
+            console.log(`存储文件: ${fileStoragePath}`);
+        }
         console.log(`访问地址: http://localhost:${port}`);
         getIps().forEach(ip => {
             console.log(`访问地址: http://${ip}:${port}`);
