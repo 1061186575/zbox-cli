@@ -2,6 +2,7 @@ const http = require('http');
 const { getIps } = require('../utils');
 
 const texts = [];
+const maxTextsLength = 200;
 
 function escapeHtml(value) {
     return String(value)
@@ -324,7 +325,7 @@ function main(port = 3000) {
                     return;
                 }
 
-                if (texts.length >= 200) {
+                if (texts.length >= maxTextsLength) {
                     texts.pop();
                 }
                 texts.unshift(text);
