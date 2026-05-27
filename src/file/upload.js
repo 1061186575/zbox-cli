@@ -4,7 +4,7 @@ const fs = require('fs');
 const formidable = require('formidable');
 const { getIps } = require("../utils");
 
-async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFileSize = 10, maxTotalFileSize = 20) {
+async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFileSize = 10, maxTotalFileSize = 20, allowDownload = false) {
     uploadDir = path.resolve(uploadDir);
 
     if (!fs.existsSync(uploadDir)) {
@@ -26,7 +26,7 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
 
             if (ctx.method === 'GET' && ctx.path === '/') {
                 ctx.type = 'html';
-                ctx.body = getUploadHTML();
+                ctx.body = getUploadHTML(allowDownload);
                 return;
             }
 
@@ -36,11 +36,65 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
             }
 
             if (ctx.method === 'GET' && ctx.path === '/files') {
-                const files = getFileList(uploadDir);
+                if (!allowDownload) {
+                    ctx.status = 403;
+                    ctx.body = { error: 'Download is disabled' };
+                    return;
+                }
+
+                const currentPath = normalizeRelativePath(ctx.query.path || '');
+                const files = getFileList(uploadDir, currentPath);
                 ctx.body = {
                     uploadDir,
+                    currentPath,
                     files: files
                 };
+                return;
+            }
+
+            if (ctx.method === 'GET' && ctx.path === '/download') {
+                if (!allowDownload) {
+                    ctx.status = 403;
+                    ctx.body = { error: 'Download is disabled' };
+                    return;
+                }
+
+                const filePath = resolveUploadPath(uploadDir, ctx.query.path || '');
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                    ctx.status = 400;
+                    ctx.body = { error: 'Cannot download a directory' };
+                    return;
+                }
+
+                ctx.attachment(path.basename(filePath));
+                ctx.body = fs.createReadStream(filePath);
+                return;
+            }
+
+            if (ctx.method === 'GET' && ctx.path === '/view') {
+                if (!allowDownload) {
+                    ctx.status = 403;
+                    ctx.body = { error: 'Download is disabled' };
+                    return;
+                }
+
+                const filePath = resolveUploadPath(uploadDir, ctx.query.path || '');
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                    ctx.status = 400;
+                    ctx.body = { error: 'Cannot view a directory' };
+                    return;
+                }
+
+                if (!isTextFile(filePath)) {
+                    ctx.status = 400;
+                    ctx.body = { error: 'Only text files can be viewed' };
+                    return;
+                }
+
+                ctx.type = 'text';
+                ctx.body = fs.createReadStream(filePath);
                 return;
             }
 
@@ -157,25 +211,28 @@ function handleFilePlacement(file, originalName, uploadDir) {
 function getFileList(dir, relativePath = '') {
     const files = [];
     const maxFileCount = 1000;
-    const items = fs.readdirSync(path.join(dir, relativePath));
+    const currentDir = resolveUploadPath(dir, relativePath);
+    const items = fs.readdirSync(currentDir);
 
     items.forEach(item => {
         if (files.length >= maxFileCount) return;
-        const fullPath = path.join(dir, relativePath, item);
+        const itemPath = path.join(relativePath, item);
+        const fullPath = path.join(currentDir, item);
         const stat = fs.statSync(fullPath);
 
         if (stat.isDirectory()) {
             files.push({
                 name: item,
                 type: 'directory',
-                path: path.join(relativePath, item),
+                path: toWebPath(itemPath),
                 modified: stat.mtime,
             });
         } else {
             files.push({
                 name: item,
                 type: 'file',
-                path: path.join(relativePath, item),
+                path: toWebPath(itemPath),
+                isText: isTextFile(fullPath),
                 size: stat.size,
                 modified: stat.mtime
             });
@@ -185,8 +242,49 @@ function getFileList(dir, relativePath = '') {
     return files;
 }
 
-function getUploadHTML() {
-    return fs.readFileSync(path.join(__dirname, 'upload.html'), 'utf8');
+function normalizeRelativePath(relativePath) {
+    return toWebPath(String(relativePath || '').replace(/^[/\\]+/, ''));
+}
+
+function resolveUploadPath(uploadDir, relativePath) {
+    const normalizedPath = normalizeRelativePath(relativePath);
+    const resolvedPath = path.resolve(uploadDir, normalizedPath);
+    const relativeToRoot = path.relative(uploadDir, resolvedPath);
+
+    if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
+        const error = new Error('Invalid path');
+        error.status = 400;
+        throw error;
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+        const error = new Error('Path not found');
+        error.status = 404;
+        throw error;
+    }
+
+    return resolvedPath;
+}
+
+function toWebPath(filePath) {
+    return filePath.split(path.sep).join('/');
+}
+
+function isTextFile(filePath) {
+    const textExtensions = new Set([
+        '.txt', '.md', '.json', '.js', '.jsx', '.ts', '.tsx', '.css', '.html', '.htm',
+        '.xml', '.csv', '.log', '.yml', '.yaml', '.ini', '.conf', '.config', '.env',
+        '.gitignore', '.npmrc', '.prettierrc', '.eslintrc'
+    ]);
+    const ext = path.extname(filePath).toLowerCase();
+
+    return textExtensions.has(ext) || textExtensions.has(path.basename(filePath).toLowerCase());
+}
+
+function getUploadHTML(allowDownload) {
+    return fs
+        .readFileSync(path.join(__dirname, 'upload.html'), 'utf8')
+        .replace('__ALLOW_DOWNLOAD__', JSON.stringify(Boolean(allowDownload)));
 }
 
 module.exports = createUploadServer;
