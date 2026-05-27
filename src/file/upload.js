@@ -212,7 +212,16 @@ function getFileList(dir, relativePath = '') {
     const files = [];
     const maxFileCount = 1000;
     const currentDir = resolveUploadPath(dir, relativePath);
-    const items = fs.readdirSync(currentDir);
+    const items = fs.readdirSync(currentDir).sort((first, second) => {
+        const firstStat = fs.statSync(path.join(currentDir, first));
+        const secondStat = fs.statSync(path.join(currentDir, second));
+
+        if (firstStat.isDirectory() !== secondStat.isDirectory()) {
+            return firstStat.isDirectory() ? -1 : 1;
+        }
+
+        return first.localeCompare(second, undefined, { sensitivity: 'base' });
+    });
 
     items.forEach(item => {
         if (files.length >= maxFileCount) return;

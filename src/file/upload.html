@@ -160,9 +160,15 @@
         }
         .modal-title { font-weight: 700; word-break: break-all; }
         .modal-content {
+            display: block;
+            width: 100%;
             max-height: calc(85vh - 58px);
+            height: calc(85vh - 58px);
             overflow: auto;
             padding: 16px;
+            border: 0;
+            resize: none;
+            outline: none;
             white-space: pre-wrap;
             word-break: break-word;
             font-family: Consolas, Monaco, 'Courier New', monospace;
@@ -227,7 +233,7 @@
             <div class="modal-title" id="textModalTitle"></div>
             <button type="button" class="file-action-btn" onclick="closeTextModal()">关闭</button>
         </div>
-        <pre class="modal-content" id="textModalContent"></pre>
+        <textarea class="modal-content" id="textModalContent" readonly></textarea>
     </div>
 </div>
 <script>
@@ -322,7 +328,7 @@
         const fileList = document.getElementById('fileList');
         currentPath = res.currentPath || '';
         document.getElementById('uploadDir').innerText = res.uploadDir;
-        document.getElementById('currentPath').innerText = currentPath ? `/${currentPath}` : '/';
+        document.getElementById('currentPath').innerText = currentPath ? `/${currentPath}` : '';
         document.getElementById('backButton').style.visibility = currentPath ? 'visible' : 'hidden';
 
         if (!res.files.length) {
@@ -371,7 +377,7 @@
             const response = await fetch(`/view?path=${encodedPath}`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             document.getElementById('textModalTitle').innerText = fileName;
-            document.getElementById('textModalContent').innerText = await response.text();
+            document.getElementById('textModalContent').value = await response.text();
             document.getElementById('textModal').classList.add('active');
         } catch (error) {
             showMessage(`查看失败: ${error.message}`, 'error');
@@ -381,7 +387,7 @@
     function closeTextModal() {
         document.getElementById('textModal').classList.remove('active');
         document.getElementById('textModalTitle').innerText = '';
-        document.getElementById('textModalContent').innerText = '';
+        document.getElementById('textModalContent').value = '';
     }
 
     function downloadFile(encodedPath) {
