@@ -108,13 +108,15 @@ file
     .option('-d, --dir <directory>', '指定文件保存目录', process.cwd())
     .option('--maxFileSize <size>', '单个文件最大大小 (GB)', '10')
     .option('--maxTotalFileSize <size>', '总文件最大大小 (GB)', '20')
+    .option('--allowDownload', '允许下载文件', false)
     .action(options => {
         const uploadServer = require('./upload')
         uploadServer(
             options.port,
             options.dir,
             parseInt(options.maxFileSize),
-            parseInt(options.maxTotalFileSize)
+            parseInt(options.maxTotalFileSize),
+            options.allowDownload,
         )
     })
 
