@@ -18,7 +18,7 @@ network
 network
     .command('text')
     .option('-p, --port <port>', '指定端口号', '3000')
-    .description('启动文本保存服务')
+    .description('启动临时文本保存服务')
     .action((options) => {
         require('./text')(options.port)
     })

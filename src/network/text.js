@@ -324,6 +324,9 @@ function main(port = 3000) {
                     return;
                 }
 
+                if (texts.length >= 200) {
+                    texts.pop();
+                }
                 texts.unshift(text);
                 sendJson(res, 200, { texts });
             } catch (error) {
