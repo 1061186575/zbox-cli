@@ -1,7 +1,7 @@
 const http = require('http');
 const { getIps } = require("../utils");
 
-function main(port = 80, response) {
+function main(port = 80) {
 
     const server = http.createServer((req, res) => {
         // 设置响应头
@@ -50,9 +50,8 @@ function main(port = 80, response) {
             const currentUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
             const queryResponse = currentUrl.searchParams.get('response');
 
-            // 请求参数中的 response 优先于启动参数 response
-            if (queryResponse || response) {
-                sendResponse(queryResponse || response);
+            if (queryResponse) {
+                sendResponse(queryResponse);
                 return;
             }
 
@@ -84,7 +83,6 @@ function main(port = 80, response) {
                     parsedBody = body;
                 }
 
-                // 请求参数中的 response 优先于启动参数 response
                 if (
                     parsedBody &&
                     typeof parsedBody === 'object' &&
@@ -92,12 +90,6 @@ function main(port = 80, response) {
                     parsedBody.response
                 ) {
                     sendResponse(String(parsedBody.response));
-                    return;
-                }
-
-                // 响应指定内容
-                if (response) {
-                    sendResponse(response);
                     return;
                 }
 
