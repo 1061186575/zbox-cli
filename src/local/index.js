@@ -9,6 +9,37 @@ const configPath = path.join(os.homedir(), '.zbox-cli-local-command.json');
 const defaultLocalCommandDir = path.join(os.homedir(), '.zbox-cli-local-command');
 let cmdLoadErrMsg = '';
 
+const localCommandTemplate = `// local-command.js
+// 添加命令: zbox local add ./local-command.js
+// 执行命令: zbox local hello --name Codex
+
+function main(options) {
+    console.log('hello', options.name);
+}
+
+module.exports = {
+    // 必填: 命令执行入口。也可以直接 module.exports = main;
+    main,
+
+    // 可选: 自定义命令名称。默认使用文件名或目录名。
+    cmdName: 'hello',
+
+    // 可选: 命令说明，会展示在 zbox local --help 中。
+    description: '输出一条问候语',
+
+    // 可选: 指定入口函数名。未指定时默认读取 main。
+    mainName: 'main',
+
+    // 可选: 命令参数。每一项会注册为 --name <name> 形式。
+    options: [
+        {
+            name: 'name',
+            desc: '要问候的名字'
+        }
+    ]
+};
+`;
+
 /**
  * 读取配置文件，获取本地命令目录和文件列表
  */
@@ -88,7 +119,17 @@ function getCommandName(filePath) {
 
 // 创建 local 主命令
 const local = program.command('local');
-local.description('管理与执行本地命令');
+local
+    .description('管理与执行本地命令')
+    .option('-p, --print', '打印本地命令文件模板')
+    .action(options => {
+        if (options.print) {
+            console.log(localCommandTemplate);
+            return;
+        }
+
+        local.outputHelp();
+    });
 
 // local add 命令 - 添加本地命令文件或目录
 local.command('add')
