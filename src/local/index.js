@@ -9,37 +9,6 @@ const configPath = path.join(os.homedir(), '.zbox-cli-local-command.json');
 const defaultLocalCommandDir = path.join(os.homedir(), '.zbox-cli-local-command');
 let cmdLoadErrMsg = '';
 
-const localCommandTemplate = `// local-command.js
-// 添加命令: zbox local add ./local-command.js
-// 执行命令: zbox local hello --name Codex
-
-function main(options) {
-    console.log('hello', options.name);
-}
-
-module.exports = {
-    // 必填: 命令执行入口。也可以直接 module.exports = main;
-    main,
-
-    // 可选: 自定义命令名称。默认使用文件名或目录名。
-    cmdName: 'hello',
-
-    // 可选: 命令说明，会展示在 zbox local --help 中。
-    description: '输出一条问候语',
-
-    // 可选: 指定入口函数名。未指定时默认读取 main。
-    mainName: 'main',
-
-    // 可选: 命令参数。每一项会注册为 --name <name> 形式。
-    options: [
-        {
-            name: 'name',
-            desc: '要问候的名字'
-        }
-    ]
-};
-`;
-
 /**
  * 读取配置文件，获取本地命令目录和文件列表
  */
@@ -173,6 +142,7 @@ local
     .option('-p, --print', '打印本地命令文件模板')
     .action(options => {
         if (options.print) {
+            const localCommandTemplate = fs.readFileSync(path.join(__dirname, './example.js')).toString();
             console.log(localCommandTemplate);
             return;
         }
@@ -304,6 +274,9 @@ if (localCommandDirs.length > 0) {
         });
 
         function loadCmd(filePath) {
+            if (!isValidCommand(filePath)) {
+                return;
+            }
             try {
                 const module = loadCommand(filePath);
                 /*
@@ -338,7 +311,7 @@ if (localCommandDirs.length > 0) {
 
                 // 添加选项
                 options.forEach(item => {
-                    res.option(`--${item.name} <${item.name}>`, item.desc || '');
+                    res.option(`--${item.name} [${item.name}]`, item.desc || '');
                 });
             } catch (error) {
                 console.error(`加载本地命令失败 ${filePath}:`, error);
