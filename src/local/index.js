@@ -117,6 +117,55 @@ function getCommandName(filePath) {
     return path.parse(filePath).name;
 }
 
+/**
+ * 获取路径下可用的命令文件
+ */
+function getCommandFiles(inputPath) {
+    const stat = fs.statSync(inputPath);
+
+    if (stat.isFile()) {
+        return isValidCommand(inputPath) ? [inputPath] : [];
+    }
+
+    let fileList;
+    try {
+        fileList = fs.readdirSync(inputPath);
+    } catch (error) {
+        console.error(`读取目录失败 ${inputPath}:`, error.message);
+        return [];
+    }
+
+    return fileList
+        .map(filename => path.join(inputPath, filename))
+        .filter(filePath => isValidCommand(filePath));
+}
+
+/**
+ * 获取本地命令信息
+ */
+function getCommandInfo(filePath) {
+    try {
+        const module = loadCommand(filePath);
+        const main = getMain(module);
+        const { cmdName, description } = module;
+
+        if (typeof main !== 'function') {
+            return {
+                error: '文件加载失败, 请导出 main 方法, 或者导出 mainName 指定 main 方法名称'
+            };
+        }
+
+        return {
+            command: cmdName || getCommandName(filePath),
+            description: description || ''
+        };
+    } catch (error) {
+        return {
+            error: error.message
+        };
+    }
+}
+
 // 创建 local 主命令
 const local = program.command('local');
 local
@@ -199,6 +248,23 @@ local.command('list')
                 const stat = fs.statSync(pathItem);
                 const type = stat.isFile() ? '[文件]' : '[目录]';
                 console.log(`  ${index + 1}. ${type} ${pathItem}`);
+
+                const commandFiles = getCommandFiles(pathItem);
+                if (commandFiles.length === 0) {
+                    console.log('     未发现可用命令');
+                    return;
+                }
+
+                commandFiles.forEach(filePath => {
+                    const info = getCommandInfo(filePath);
+                    if (info.error) {
+                        console.log(`     ${getCommandName(filePath)}: ${info.error}`);
+                        return;
+                    }
+
+                    const description = info.description ? ` - ${info.description}` : '';
+                    console.log(`     ${info.command}${description}`);
+                });
             } catch (error) {
                 console.log(`  ${index + 1}. [无效] ${pathItem}`);
             }
@@ -233,30 +299,11 @@ if (localCommandDirs.length > 0) {
             return;
         }
 
-        const stat = fs.statSync(p);
-        if (stat.isFile()) {
-            loadCmd(p);
-            return;
-        }
-
-        let fileList;
-        try {
-            fileList = fs.readdirSync(p);
-        } catch (error) {
-            console.error(`读取目录失败 ${p}:`, error.message);
-            return;
-        }
-
-        fileList.forEach(filename => {
-            const filePath = path.join(p, filename);
+        getCommandFiles(p).forEach(filePath => {
             loadCmd(filePath);
         });
 
         function loadCmd(filePath) {
-            if (!isValidCommand(filePath)) {
-                return;
-            }
-
             try {
                 const module = loadCommand(filePath);
                 /*
