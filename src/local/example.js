@@ -3,7 +3,7 @@
 // 执行命令: zbox local hello --name Codex
 
 function main(options) {
-    console.log('hello', options.name);
+    console.log('hello', options);
 }
 
 module.exports = {
@@ -19,16 +19,28 @@ module.exports = {
     // 可选: 指定入口函数名。未指定时默认读取 main。
     mainName: 'main',
 
-    // 可选: 命令参数。每一项会注册为 --name [name] 形式。
-    // --name 后面不传值时为 true，传值时为对应字符串。
-    // 如果 name 写成 'no-name'，会注册为 --no-name:
-    // 1. zbox local hello -> options { name: true }
-    // 2. zbox local hello --no-name -> options { name: false }
-    // 3. zbox local hello --no-name VV -> options { name: 'VV' }
+    // 可选: 命令参数。默认会注册为 --name [name] 形式。
+    // 如果 required 为 true，会注册为 --name <name> 形式，输入 --name 后必须带值。
+    // 如果 name 写成 'no-name'，会注册为 --no-name
+    // 如果 name 是 '-' 开头的，就不会自动添加前缀。
     options: [
         {
             name: 'name',
-            desc: '要问候的名字'
+            desc: '可选名称'
         },
+        {
+            name: 'token',
+            desc: '必填 token',
+            required: true
+        },
+        {
+            name: 'no-cache',
+            desc: '禁用缓存'
+        },
+        {
+            name: '-l, --list',
+            desc: '短选项，多个参数',
+            multiple: true
+        }
     ]
 };

@@ -311,7 +311,13 @@ if (localCommandDirs.length > 0) {
 
                 // 添加选项
                 options.forEach(item => {
-                    res.option(`--${item.name} [${item.name}]`, item.desc || '');
+                    if (!item.name) {
+                        return;
+                    }
+                    const prefix = item.name.startsWith('-') ? '' : '--';
+                    const multiple = item.multiple ? '...' : '';
+                    const valueMark = item.required ? `<${item.name}${multiple}>` : `[${item.name}${multiple}]`;
+                    res.option(`${prefix}${item.name} ${valueMark}`, item.desc || '');
                 });
             } catch (error) {
                 console.error(`加载本地命令失败 ${filePath}:`, error);
