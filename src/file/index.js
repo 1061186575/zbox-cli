@@ -18,7 +18,7 @@ file
     .option('--ext', '是否保留文件扩展名', false)
     .action(options => {
         const randomRename = require('./randomRename')
-        randomRename(options.path, options.action, options.recordFileName, options.base64, options.ext)
+        return randomRename(options.path, options.action, options.recordFileName, options.base64, options.ext)
     })
 
 // 文件加密解密工具

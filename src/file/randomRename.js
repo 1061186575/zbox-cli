@@ -1,6 +1,8 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
+const { Transform } = require('stream')
+const { pipeline } = require('stream/promises')
 const { question } = require("../utils");
 
 async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', base64 = false, ext = false) {
@@ -16,9 +18,9 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ba
     }
 
     if (action === '1') {
-        randomRename(directoryPath, recordFileName, base64, ext)
+        await randomRename(directoryPath, recordFileName, base64, ext)
     } else if (action === '2') {
-        restore(directoryPath, recordFileName, base64)
+        await restore(directoryPath, recordFileName, base64)
     } else {
         console.log('无效输入')
     }
@@ -27,7 +29,7 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ba
 
 
 // 将文件重命名并保存原文件名和新文件名到 recordFileName
-function randomRename(directoryPath, recordFileName, base64, ext) {
+async function randomRename(directoryPath, recordFileName, base64, ext) {
 
     if (!fs.existsSync(directoryPath)) {
         console.log('文件夹不存在')
@@ -42,41 +44,34 @@ function randomRename(directoryPath, recordFileName, base64, ext) {
         return;
     }
 
-    const nameMap = {
-        __isUseBase64: base64,
-    }
-
     try {
-        const filePaths = getAllFilePaths(directoryPath)
+        const filePaths = getAllFilePaths(directoryPath).filter((filePath) => {
+            return !isRecordFilePath(directoryPath, filePath, recordFileName)
+        })
+        const nameMap = createNameMap(directoryPath, filePaths, recordFileName, base64, ext)
 
-        filePaths.forEach((filePath) => {
+        // 先写完整记录，再开始移动/编码文件，避免中途中断后无法恢复文件名。
+        writeRecordFile(nameFilePath, nameMap)
+        console.log(`writeFileSync: ${nameFilePath}`)
+
+        for (const filePath of filePaths) {
             const fileName = filePath.replace(directoryPath, '')
-            let extname = ''
-            if (ext) {
-                extname = path.extname(fileName)
-            }
-            const randomName = generateRandomName() + extname
+            const randomName = nameMap[fileName]
             const renamedFilePath = path.join(directoryPath, randomName)
 
             // 如果启用 base64，对文件内容进行编码
             if (base64) {
-                encodeFileToBase64(filePath, renamedFilePath)
+                await encodeFileToBase64(filePath, renamedFilePath)
                 console.log(`已对文件进行 base64 编码: ${fileName} -> ${randomName}`)
             } else {
                 fs.renameSync(filePath, renamedFilePath)
             }
-
-            nameMap[fileName] = randomName
-        })
+        }
     } catch (e) {
         console.log('e', e)
         return
     }
     console.log('Files renamed successfully.')
-
-    const nameFileContent = JSON.stringify(nameMap, null, 2)
-    fs.writeFileSync(nameFilePath, strToNum(nameFileContent))
-    console.log(`writeFileSync: ${nameFilePath}`)
 
     deleteEmptyFolder(directoryPath)
 }
@@ -108,36 +103,53 @@ async function restore(directoryPath, recordFileName, base64) {
     }
 
     const errList = [];
-    Object.entries(nameMap).forEach(([originalName, renamedName]) => {
-        const originalFilePath = path.join(directoryPath, renamedName)
+    const warnList = [];
+    for (const [originalName, renamedName] of Object.entries(nameMap)) {
+        const renamedFilePath = path.join(directoryPath, renamedName)
         const restoredFilePath = path.join(directoryPath, originalName)
 
-        if (!fs.existsSync(originalFilePath)) {
+        if (!fs.existsSync(renamedFilePath)) {
+            if (fs.existsSync(restoredFilePath)) {
+                continue
+            }
             errList.push(`原文件不存在, 无法重命名 ❌ : ${renamedName} -> ${originalName}`)
-            return
+            continue
         }
 
         fs.mkdirSync(path.parse(restoredFilePath).dir, { recursive: true });
 
-        // 如果使用了 base64 编码，需要先解码再还原文件名
-        if (isUseBase64) {
-            // 读取文件部分内容，判断是否是 base64 格式, 避免误解码
-            const firstChars = safeReadFirstChars(originalFilePath);
-            const base64Regexp = /^[A-Za-z0-9+/]*={0,2}$/;
-            if (base64Regexp.test(firstChars)) {
-                decodeFileFromBase64(originalFilePath, restoredFilePath)
-                // console.log(`已对文件进行 base64 解码并还原: ${renamedName} -> ${originalName}`)
+        try {
+            // 如果使用了 base64 编码，需要先解码再还原文件名
+            if (isUseBase64) {
+                // 读取文件部分内容，判断是否是 base64 格式, 避免误解码
+                const firstChars = safeReadFirstChars(renamedFilePath);
+                const base64Regexp = /^[A-Za-z0-9+/]*={0,2}$/;
+                if (base64Regexp.test(firstChars)) {
+                    await decodeFileFromBase64(renamedFilePath, restoredFilePath)
+                    // console.log(`已对文件进行 base64 解码并还原: ${renamedName} -> ${originalName}`)
+                } else {
+                    warnList.push(`文件内容不是base64格式, 仅重命名, 不能解码: ${renamedName} -> ${originalName}`)
+                    fs.renameSync(renamedFilePath, restoredFilePath)
+                }
             } else {
-                errList.push(`文件内容不是base64格式, 仅重命名, 不能解码: ${renamedName} -> ${originalName}`)
-                fs.renameSync(originalFilePath, restoredFilePath)
+                fs.renameSync(renamedFilePath, restoredFilePath)
             }
-        } else {
-            fs.renameSync(originalFilePath, restoredFilePath)
+        } catch (e) {
+            errList.push(`还原失败 ❌ : ${renamedName} -> ${originalName}, ${e.message}`)
         }
-    })
+    }
 
     if (errList.length) {
         console.log(`errList`, errList);
+        if (warnList.length) {
+            console.log(`warnList`, warnList);
+        }
+        console.log(`保留记录文件，修复问题后可再次执行还原: ${nameFilePath}`)
+        return
+    }
+
+    if (warnList.length) {
+        console.log(`warnList`, warnList);
     } else {
         console.log('Files restored successfully.')
     }
@@ -175,6 +187,56 @@ function generateRandomName() {
     return `${randomBytes.toString('hex')}_${Date.now()}`
 }
 
+function createNameMap(directoryPath, filePaths, recordFileName, base64, ext) {
+    const nameMap = {
+        __isUseBase64: base64,
+    }
+    const usedNames = new Set([recordFileName])
+
+    filePaths.forEach((filePath) => {
+        usedNames.add(path.basename(filePath))
+    })
+
+    filePaths.forEach((filePath) => {
+        const fileName = filePath.replace(directoryPath, '')
+        let extname = ''
+        if (ext) {
+            extname = path.extname(fileName)
+        }
+
+        let randomName = generateRandomName() + extname
+        while (usedNames.has(randomName) || fs.existsSync(path.join(directoryPath, randomName))) {
+            randomName = generateRandomName() + extname
+        }
+
+        usedNames.add(randomName)
+        nameMap[fileName] = randomName
+    })
+
+    return nameMap
+}
+
+function writeRecordFile(nameFilePath, nameMap) {
+    const nameFileContent = JSON.stringify(nameMap, null, 2)
+    const tempPath = `${nameFilePath}.tmp-${process.pid}-${Date.now()}`
+
+    try {
+        fs.writeFileSync(tempPath, strToNum(nameFileContent), { flag: 'wx' })
+        fs.renameSync(tempPath, nameFilePath)
+    } catch (e) {
+        if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath)
+        }
+        throw e
+    }
+}
+
+function isRecordFilePath(directoryPath, filePath, recordFileName) {
+    const relativePath = path.relative(directoryPath, filePath)
+
+    return relativePath === recordFileName || relativePath.startsWith(`${recordFileName}.tmp-`)
+}
+
 function getAllFilePaths(dirPath) {
     let filePaths = []
 
@@ -204,89 +266,99 @@ function numToStr(num) {
 }
 
 // 使用流的方式对文件进行 base64 编码，避免大文件占用大量内存
-function encodeFileToBase64(inputPath, outputPath) {
-    const readStream = fs.createReadStream(inputPath)
-    const writeStream = fs.createWriteStream(outputPath)
+async function encodeFileToBase64(inputPath, outputPath) {
+    const tempPath = createTempFilePath(outputPath)
 
-    let buffer = Buffer.alloc(0)
-
-    readStream.on('data', (chunk) => {
-        buffer = Buffer.concat([buffer, chunk])
-
-        // 每次处理 3KB 的倍数，确保 base64 编码的正确性
-        const processLength = Math.floor(buffer.length / 3) * 3
-        if (processLength > 0) {
-            const processBuffer = buffer.slice(0, processLength)
-            const base64Chunk = processBuffer.toString('base64')
-            writeStream.write(base64Chunk)
-            buffer = buffer.slice(processLength)
-        }
-    })
-
-    readStream.on('end', () => {
-        // 处理剩余的数据
-        if (buffer.length > 0) {
-            const base64Chunk = buffer.toString('base64')
-            writeStream.write(base64Chunk)
-        }
-        writeStream.end()
-
-        // 删除原文件
+    try {
+        await pipeline(
+            fs.createReadStream(inputPath),
+            createBase64EncodeStream(),
+            fs.createWriteStream(tempPath, { flags: 'wx' }),
+        )
+        fs.renameSync(tempPath, outputPath)
         fs.unlinkSync(inputPath)
-    })
-
-    readStream.on('error', (err) => {
-        console.error('读取文件时出错:', err)
-        writeStream.destroy()
-    })
-
-    writeStream.on('error', (err) => {
-        console.error('写入文件时出错:', err)
-        readStream.destroy()
-    })
+    } catch (e) {
+        cleanupTempFile(tempPath)
+        throw e
+    }
 }
 
 // 使用流的方式对文件进行 base64 解码
-function decodeFileFromBase64(inputPath, outputPath) {
-    const readStream = fs.createReadStream(inputPath, { encoding: 'utf8' })
-    const writeStream = fs.createWriteStream(outputPath)
+async function decodeFileFromBase64(inputPath, outputPath) {
+    const tempPath = createTempFilePath(outputPath)
 
+    try {
+        await pipeline(
+            fs.createReadStream(inputPath),
+            createBase64DecodeStream(),
+            fs.createWriteStream(tempPath, { flags: 'wx' }),
+        )
+        fs.renameSync(tempPath, outputPath)
+        fs.unlinkSync(inputPath)
+    } catch (e) {
+        cleanupTempFile(tempPath)
+        throw e
+    }
+}
+
+function createBase64EncodeStream() {
+    let buffer = Buffer.alloc(0)
+
+    return new Transform({
+        transform(chunk, encoding, callback) {
+            buffer = Buffer.concat([buffer, chunk])
+
+            // 每次处理 3 的倍数，确保 base64 编码的正确性
+            const processLength = Math.floor(buffer.length / 3) * 3
+            if (processLength > 0) {
+                const processBuffer = buffer.slice(0, processLength)
+                this.push(processBuffer.toString('base64'))
+                buffer = buffer.slice(processLength)
+            }
+            callback()
+        },
+        flush(callback) {
+            if (buffer.length > 0) {
+                this.push(buffer.toString('base64'))
+            }
+            callback()
+        },
+    })
+}
+
+function createBase64DecodeStream() {
     let buffer = ''
 
-    readStream.on('data', (chunk) => {
-        buffer += chunk
+    return new Transform({
+        transform(chunk, encoding, callback) {
+            buffer += chunk.toString('utf8')
 
-        // 每次处理 4KB 的倍数，确保 base64 解码的正确性
-        const processLength = Math.floor(buffer.length / 4) * 4
-        if (processLength > 0) {
-            const processString = buffer.slice(0, processLength)
-            const decodedBuffer = Buffer.from(processString, 'base64')
-            writeStream.write(decodedBuffer)
-            buffer = buffer.slice(processLength)
-        }
+            // 每次处理 4 的倍数，确保 base64 解码的正确性
+            const processLength = Math.floor(buffer.length / 4) * 4
+            if (processLength > 0) {
+                const processString = buffer.slice(0, processLength)
+                this.push(Buffer.from(processString, 'base64'))
+                buffer = buffer.slice(processLength)
+            }
+            callback()
+        },
+        flush(callback) {
+            if (buffer.length > 0) {
+                this.push(Buffer.from(buffer, 'base64'))
+            }
+            callback()
+        },
     })
+}
 
-    readStream.on('end', () => {
-        // 处理剩余的数据
-        if (buffer.length > 0) {
-            const decodedBuffer = Buffer.from(buffer, 'base64')
-            writeStream.write(decodedBuffer)
-        }
-        writeStream.end()
+function createTempFilePath(filePath) {
+    return `${filePath}.tmp-${process.pid}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+}
 
-        // 删除编码后的文件
-        fs.unlinkSync(inputPath)
-    })
-
-    readStream.on('error', (err) => {
-        console.error('读取文件时出错:', err)
-        writeStream.destroy()
-    })
-
-    writeStream.on('error', (err) => {
-        console.error('写入文件时出错:', err)
-        readStream.destroy()
-    })
+function cleanupTempFile(filePath) {
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+    }
 }
 
 function safeReadFirstChars(filePath, charLength = 10000) {
