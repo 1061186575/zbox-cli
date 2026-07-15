@@ -21,6 +21,10 @@ async function main(actionPath, action, recordFileName = '.__RECORDFILENAME', ba
         await randomRename(directoryPath, recordFileName, base64, ext)
     } else if (action === '2') {
         await restore(directoryPath, recordFileName, base64)
+    } else if (action === '100') {
+        // 隐藏选项，查看文件映射关系
+        const nameFilePath = path.join(directoryPath, recordFileName)
+        console.log(numToStr(fs.readFileSync(nameFilePath, 'utf8')));
     } else {
         console.log('无效输入')
     }
