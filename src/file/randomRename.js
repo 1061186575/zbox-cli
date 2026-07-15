@@ -59,8 +59,8 @@ async function randomRename(directoryPath, recordFileName, base64, ext) {
             const randomName = nameMap[fileName]
             const renamedFilePath = path.join(directoryPath, randomName)
 
-            // 如果启用 base64，对文件内容进行编码
-            if (base64) {
+            // 链接文件只移动链接本身，避免 base64 模式读取并改写链接目标。
+            if (base64 && !isSymbolicLink(filePath)) {
                 await encodeFileToBase64(filePath, renamedFilePath)
                 // console.log(`已对文件进行 base64 编码: ${fileName} -> ${randomName}`)
             } else {
@@ -108,8 +108,8 @@ async function restore(directoryPath, recordFileName, base64) {
         const renamedFilePath = path.join(directoryPath, renamedName)
         const restoredFilePath = path.join(directoryPath, originalName)
 
-        if (!fs.existsSync(renamedFilePath)) {
-            if (fs.existsSync(restoredFilePath)) {
+        if (!pathExists(renamedFilePath)) {
+            if (pathExists(restoredFilePath)) {
                 continue
             }
             errList.push(`原文件不存在, 无法重命名 ❌ : ${renamedName} -> ${originalName}`)
@@ -119,8 +119,8 @@ async function restore(directoryPath, recordFileName, base64) {
         fs.mkdirSync(path.parse(restoredFilePath).dir, { recursive: true });
 
         try {
-            // 如果使用了 base64 编码，需要先解码再还原文件名
-            if (isUseBase64) {
+            // 链接文件只移动链接本身，避免 base64 模式读取并改写链接目标。
+            if (isUseBase64 && !isSymbolicLink(renamedFilePath)) {
                 // 读取文件部分内容，判断是否是 base64 格式, 避免误解码
                 const firstChars = safeReadFirstChars(renamedFilePath);
                 const base64Regexp = /^[A-Za-z0-9+/]*={0,2}$/;
@@ -159,15 +159,15 @@ async function restore(directoryPath, recordFileName, base64) {
 
 
 function deleteEmptyFolder(folderPath) {
-    if (!fs.existsSync(folderPath)) {
+    if (!pathExists(folderPath)) {
         console.log(`deleteEmptyFolder: 文件夹 ${folderPath} 不存在`);
         return;
     }
 
     fs.readdirSync(folderPath).forEach((file) => {
         const filePath = path.join(folderPath, file);
-        if (fs.existsSync(filePath)) {
-            const stats = fs.statSync(filePath);
+        if (pathExists(filePath)) {
+            const stats = fs.lstatSync(filePath);
 
             if (stats.isDirectory()) {
                 deleteEmptyFolder(filePath);
@@ -205,7 +205,7 @@ function createNameMap(directoryPath, filePaths, recordFileName, base64, ext) {
         }
 
         let randomName = generateRandomName() + extname
-        while (usedNames.has(randomName) || fs.existsSync(path.join(directoryPath, randomName))) {
+        while (usedNames.has(randomName) || pathExists(path.join(directoryPath, randomName))) {
             randomName = generateRandomName() + extname
         }
 
@@ -244,9 +244,11 @@ function getAllFilePaths(dirPath) {
 
     files.forEach((file) => {
         const filePath = path.join(dirPath, file)
-        const stat = fs.statSync(filePath)
+        const stat = fs.lstatSync(filePath)
 
-        if (stat.isDirectory()) {
+        if (stat.isSymbolicLink()) {
+            filePaths.push(filePath)
+        } else if (stat.isDirectory()) {
             const nestedFilePaths = getAllFilePaths(filePath)
             filePaths = filePaths.concat(nestedFilePaths)
         } else {
@@ -358,6 +360,29 @@ function createTempFilePath(filePath) {
 function cleanupTempFile(filePath) {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath)
+    }
+}
+
+function pathExists(filePath) {
+    try {
+        fs.lstatSync(filePath)
+        return true
+    } catch (e) {
+        if (e.code === 'ENOENT') {
+            return false
+        }
+        throw e
+    }
+}
+
+function isSymbolicLink(filePath) {
+    try {
+        return fs.lstatSync(filePath).isSymbolicLink()
+    } catch (e) {
+        if (e.code === 'ENOENT') {
+            return false
+        }
+        throw e
     }
 }
 

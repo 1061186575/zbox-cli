@@ -87,4 +87,36 @@ describe('randomRename', () => {
         expect(fs.readFileSync(originalFile, 'utf8')).toBe(content)
         expect(fs.existsSync(renamedPath)).toBe(false)
     })
+
+    test('renames and restores symlinks even when the moved link is temporarily broken', async () => {
+        const recordPath = path.join(testDir, '.__RECORDFILENAME')
+        const binDir = path.join(testDir, 'node_modules/tsconfig-paths/node_modules/.bin')
+        const targetDir = path.join(testDir, 'node_modules/json5/lib')
+        const originalLink = path.join(binDir, 'json5')
+        const linkTarget = '../../../json5/lib/cli.js'
+
+        fs.mkdirSync(binDir, { recursive: true })
+        fs.mkdirSync(targetDir, { recursive: true })
+        fs.writeFileSync(path.join(targetDir, 'cli.js'), 'console.log("json5")')
+        fs.symlinkSync(linkTarget, originalLink)
+
+        await randomRename(testDir, '1', undefined, true)
+
+        expect(fs.existsSync(recordPath)).toBe(true)
+        expect(fs.existsSync(originalLink)).toBe(false)
+
+        const record = readRecordFile(recordPath)
+        const renamedPath = path.join(testDir, record['/node_modules/tsconfig-paths/node_modules/.bin/json5'])
+        expect(fs.lstatSync(renamedPath).isSymbolicLink()).toBe(true)
+        expect(fs.existsSync(renamedPath)).toBe(false)
+        expect(fs.readlinkSync(renamedPath)).toBe(linkTarget)
+
+        await randomRename(testDir, '2')
+
+        expect(fs.existsSync(recordPath)).toBe(false)
+        expect(fs.lstatSync(originalLink).isSymbolicLink()).toBe(true)
+        expect(fs.existsSync(originalLink)).toBe(true)
+        expect(fs.readlinkSync(originalLink)).toBe(linkTarget)
+        expect(fs.existsSync(renamedPath)).toBe(false)
+    })
 })
