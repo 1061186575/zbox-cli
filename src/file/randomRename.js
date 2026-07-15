@@ -62,7 +62,7 @@ async function randomRename(directoryPath, recordFileName, base64, ext) {
             // 如果启用 base64，对文件内容进行编码
             if (base64) {
                 await encodeFileToBase64(filePath, renamedFilePath)
-                console.log(`已对文件进行 base64 编码: ${fileName} -> ${randomName}`)
+                // console.log(`已对文件进行 base64 编码: ${fileName} -> ${randomName}`)
             } else {
                 fs.renameSync(filePath, renamedFilePath)
             }
@@ -71,9 +71,9 @@ async function randomRename(directoryPath, recordFileName, base64, ext) {
         console.log('e', e)
         return
     }
-    console.log('Files renamed successfully.')
 
     deleteEmptyFolder(directoryPath)
+    console.log('Files renamed successfully.')
 }
 
 
