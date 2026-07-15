@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const fileMd5 = require('../src/crypto/md5').fileMd5;
+const fileMd5 = require('../../src/crypto/md5').fileMd5;
 
 // Mock console.log to capture output
 const originalLog = console.log;
@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 describe('fileMd5', () => {
-    const testDir = path.join(__dirname, 'tmp');
+    const testDir = path.join(__dirname, 'fileMd5TestDir');
     const testFile = path.join(testDir, 'test-md5.txt');
     const testContent = 'Hello, World!测试内容';
 
@@ -41,12 +41,13 @@ describe('fileMd5', () => {
         if (fs.existsSync(testFile)) {
             fs.unlinkSync(testFile);
         }
+        fs.rmdirSync(testDir);
     });
 
     test('应该能计算存在文件的 MD5 值', async () => {
         // Mock question function
         const mockQuestion = jest.fn();
-        jest.doMock('../src/utils', () => ({
+        jest.doMock('../../src/utils', () => ({
             question: mockQuestion
         }));
 

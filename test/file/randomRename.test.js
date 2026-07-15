@@ -1,7 +1,7 @@
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const randomRename = require('../src/file/randomRename')
+const randomRename = require('../../src/file/randomRename')
 
 function createTestDir() {
     return fs.mkdtempSync(path.join(os.tmpdir(), 'randomRename-test-'))

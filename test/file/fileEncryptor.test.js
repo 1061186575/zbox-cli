@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
-const { encryptCLI, decryptCLI, isEncryptedFile } = require('../src/file/fileEncryptor');
+const { encryptCLI, decryptCLI, isEncryptedFile } = require('../../src/file/fileEncryptor');
 
 // 测试用的临时目录
 const testDir = path.join(os.tmpdir(), 'fileEncryptor-test');
