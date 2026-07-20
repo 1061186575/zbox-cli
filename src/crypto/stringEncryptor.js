@@ -110,10 +110,31 @@ class StringEncryptor {
 
 // ==================== CLI 接口函数 ====================
 
+function handleCopyFallback(content, options, filePrefix, savedMessageLabel) {
+    const copy = options.copyToClipboard || copyToClipboard;
+    const copied = copy(content);
+
+    if (copied) {
+        return true;
+    }
+
+    console.log('⚠️  无法复制到粘贴板，请手动复制上方内容');
+
+    if (!options.allowWriteFile) {
+        return false;
+    }
+
+    const outputPath = path.join(process.cwd(), `${filePrefix}-${Date.now()}.txt`);
+    fs.writeFileSync(outputPath, content);
+    console.log(`✅ ${savedMessageLabel}已保存到 ${outputPath} 文件`);
+
+    return false;
+}
+
 /**
  * 加密字符串（CLI接口）
  */
-async function encryptStringCLI(plaintext, key) {
+async function encryptStringCLI(plaintext, key, options = {}) {
     if (!plaintext) {
         throw new Error('请提供要加密的字符串');
     }
@@ -129,14 +150,9 @@ async function encryptStringCLI(plaintext, key) {
     console.log('密文:', encrypted);
 
     // 如果内容很长, 部分终端输出的内容可能和实际内容不一致, 所以直接复制到粘贴板
-    const copied = copyToClipboard(encrypted);
+    const copied = handleCopyFallback(encrypted, options, 'encrypted', '密文');
     if (copied) {
         console.log('📋 密文已复制到粘贴板');
-    } else {
-        console.log('⚠️  无法复制到粘贴板，请手动复制文件内容');
-        const encryptedPath = path.join(process.cwd(), `encrypted-${Date.now()}.txt`);
-        fs.writeFileSync(encryptedPath, encrypted);
-        console.log(`✅ 密文已保存到 ${encryptedPath} 文件`);
     }
 
     return encrypted;
@@ -145,7 +161,7 @@ async function encryptStringCLI(plaintext, key) {
 /**
  * 解密字符串（CLI接口）
  */
-async function decryptStringCLI(ciphertext, key) {
+async function decryptStringCLI(ciphertext, key, options = {}) {
     if (!ciphertext) {
         throw new Error('请提供要解密的字符串');
     }
@@ -166,14 +182,9 @@ async function decryptStringCLI(ciphertext, key) {
     console.log('明文:', decrypted);
 
     // 如果内容很长, 部分终端输出的内容可能和实际内容不一致, 所以直接复制到粘贴板
-    const copied = copyToClipboard(decrypted);
+    const copied = handleCopyFallback(decrypted, options, 'decrypted', '明文');
     if (copied) {
         console.log('📋 明文已复制到粘贴板');
-    } else {
-        console.log('⚠️  无法复制到粘贴板，请手动复制文件内容');
-        const decryptedPath = path.join(process.cwd(), `decrypted-${Date.now()}.txt`);
-        fs.writeFileSync(decryptedPath, decrypted);
-        console.log(`✅ 密文已保存到 ${decryptedPath} 文件`);
     }
 
     return decrypted;

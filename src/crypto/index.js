@@ -48,7 +48,7 @@ crypto
             const text = options.text || (await question('请输入要加密的字符串: ')).trim();
             const key = options.key || (await secretQuestion('请输入加密密钥(输入时不显示): ')).trim();
 
-            await encryptStringCLI(text, key);
+            await encryptStringCLI(text, key, { allowWriteFile: true });
         } catch (error) {
             console.error('❌ 加密失败:', error.message);
         }
@@ -68,7 +68,7 @@ crypto
             const text = options.text || (await question('请输入要解密的字符串: ')).trim();
             const key = options.key || (await secretQuestion('请输入解密密钥(输入时不显示): ')).trim();
 
-            await decryptStringCLI(text, key);
+            await decryptStringCLI(text, key, { allowWriteFile: true });
         } catch (error) {
             console.error('❌ 解密失败:', error.message);
         }

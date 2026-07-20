@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { StringEncryptor, encryptStringCLI, decryptStringCLI, isValidEncryptedString } = require('../src/crypto/stringEncryptor');
 
 describe('StringEncryptor', () => {
@@ -328,6 +329,29 @@ describe('CLI Functions', () => {
             await expect(encryptStringCLI('test', null)).rejects.toThrow('请提供加密密钥');
             await expect(encryptStringCLI('test', undefined)).rejects.toThrow('请提供加密密钥');
         });
+
+        test('should not write encrypted text to file when imported and clipboard copy fails', async () => {
+            const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
+
+            await encryptStringCLI('import encryption test', testKey, {
+                copyToClipboard: () => false
+            });
+
+            expect(writeSpy).not.toHaveBeenCalled();
+            expect(console.log).toHaveBeenCalledWith('⚠️  无法复制到粘贴板，请手动复制上方内容');
+        });
+
+        test('should write encrypted text to file when command usage allows it', async () => {
+            const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
+
+            await encryptStringCLI('command encryption test', testKey, {
+                allowWriteFile: true,
+                copyToClipboard: () => false
+            });
+
+            expect(writeSpy).toHaveBeenCalledTimes(1);
+            expect(writeSpy.mock.calls[0][0]).toContain('encrypted-');
+        });
     });
 
     describe('decryptStringCLI', () => {
@@ -378,6 +402,35 @@ describe('CLI Functions', () => {
             const encrypted = encryptor.encrypt(plaintext);
 
             await expect(decryptStringCLI(encrypted, 'wrong-key')).rejects.toThrow('解密失败');
+        });
+
+        test('should not write decrypted text to file when imported and clipboard copy fails', async () => {
+            const plaintext = 'import decryption test';
+            const encryptor = new StringEncryptor(testKey);
+            const encrypted = encryptor.encrypt(plaintext);
+            const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
+
+            await decryptStringCLI(encrypted, testKey, {
+                copyToClipboard: () => false
+            });
+
+            expect(writeSpy).not.toHaveBeenCalled();
+            expect(console.log).toHaveBeenCalledWith('⚠️  无法复制到粘贴板，请手动复制上方内容');
+        });
+
+        test('should write decrypted text to file when command usage allows it', async () => {
+            const plaintext = 'command decryption test';
+            const encryptor = new StringEncryptor(testKey);
+            const encrypted = encryptor.encrypt(plaintext);
+            const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
+
+            await decryptStringCLI(encrypted, testKey, {
+                allowWriteFile: true,
+                copyToClipboard: () => false
+            });
+
+            expect(writeSpy).toHaveBeenCalledTimes(1);
+            expect(writeSpy.mock.calls[0][0]).toContain('decrypted-');
         });
     });
 
