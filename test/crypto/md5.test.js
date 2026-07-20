@@ -2,12 +2,12 @@ const crypto = require('crypto');
 
 // Mock question utility
 const mockQuestion = jest.fn();
-jest.mock('../src/utils', () => ({
+jest.mock('../../src/utils', () => ({
     question: mockQuestion
 }));
 
 
-const md5Command = require('../src/crypto/md5').textMd5;
+const md5Command = require('../../src/crypto/md5').textMd5;
 
 describe('MD5 Command', () => {
     beforeEach(() => {

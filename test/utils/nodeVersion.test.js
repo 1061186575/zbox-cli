@@ -3,7 +3,7 @@ const {
     getMinimumNodeVersion,
     getNodeVersionWarning,
     warnIfUnsupportedNodeVersion
-} = require('../src/utils/nodeVersion');
+} = require('../../src/utils/nodeVersion');
 
 describe('Node version warning', () => {
     afterEach(() => {

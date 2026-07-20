@@ -89,7 +89,7 @@ async function startMoreScan(prefixes, ports) {
 }
 
 async function main(options) {
-    const defaultPorts = [80, 3000, 8080];
+    const defaultPorts = [80, 8080];
     const ports = options.ports ? options.ports.split(',').map(p => parseInt(p.trim())) : defaultPorts;
     const prefixes = options.prefix ? options.prefix.split(',').map(p => p.trim()) : getAllLocalIPPrefixes();
     let more = options.more;

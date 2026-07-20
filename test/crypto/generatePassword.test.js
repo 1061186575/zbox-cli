@@ -3,12 +3,12 @@ const crypto = require('crypto');
 // Mock utils
 const mockQuestion = jest.fn();
 const mockSecretQuestion = jest.fn();
-jest.mock('../src/utils', () => ({
+jest.mock('../../src/utils', () => ({
     question: mockQuestion,
     secretQuestion: mockSecretQuestion
 }));
 
-const generatePasswordCommand = require('../src/crypto/generatePassword');
+const generatePasswordCommand = require('../../src/crypto/generatePassword');
 
 describe('Generate Password Command', () => {
     beforeEach(() => {

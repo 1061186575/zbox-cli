@@ -3,7 +3,7 @@ const mockMultilineQuestion = jest.fn();
 const mockToString = jest.fn();
 const mockToFile = jest.fn();
 
-jest.mock('../src/utils', () => ({
+jest.mock('../../src/utils', () => ({
     question: mockQuestion,
     multilineQuestion: mockMultilineQuestion
 }));
@@ -13,7 +13,7 @@ jest.mock('qrcode', () => ({
     toFile: mockToFile
 }));
 
-const qrcodeCommand = require('../src/command/qrcode');
+const qrcodeCommand = require('../../src/command/qrcode');
 
 describe('QRCode Command', () => {
     beforeEach(() => {

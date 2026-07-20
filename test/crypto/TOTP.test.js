@@ -1,12 +1,12 @@
 const mockSecretQuestion = jest.fn();
 const mockFormatDateTime = jest.fn();
 
-jest.mock('../src/utils', () => ({
+jest.mock('../../src/utils', () => ({
     secretQuestion: mockSecretQuestion,
     formatDateTime: mockFormatDateTime
 }));
 
-const totpCommand = require('../src/crypto/totp');
+const totpCommand = require('../../src/crypto/totp');
 
 describe('TOTP Command', () => {
     const REAL_DATE_NOW = Date.now;

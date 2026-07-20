@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 
-const cliPath = path.join(__dirname, '../bin/zbox.js');
+const cliPath = path.join(__dirname, '../../bin/zbox.js');
 
 function createTempHome() {
     return fs.mkdtempSync(path.join(os.tmpdir(), 'zbox-local-test-'));
