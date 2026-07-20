@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
-const { program } = require('commander');
 const pkg = require('../package.json');
+const { warnIfUnsupportedNodeVersion } = require('../src/utils/nodeVersion');
+const { program } = require('commander');
+
+warnIfUnsupportedNodeVersion(process.versions.node, pkg.engines && pkg.engines.node);
 
 // node ./bin/zbox -h
 // npx zbox -h
@@ -12,7 +15,7 @@ program
   .description('A collection of utility tools for file/git operations, and more')
   .version(pkg.version);
 
-require('../src/index')
+require('../src/index');
 
 
 program.parse(process.argv);
