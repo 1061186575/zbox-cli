@@ -51,9 +51,9 @@ file
         const key = await question('解密密钥:')
         const unableAuthenticateData = await require('./fileEncryptor').decryptCLI(input, key, options);
         if (unableAuthenticateData) {
-            console.log('✅ 解密完成！');
-        } else {
             console.log('❌ 解密失败！');
+        } else {
+            console.log('✅ 解密完成！');
         }
     });
 

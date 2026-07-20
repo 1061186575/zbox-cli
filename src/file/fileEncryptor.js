@@ -277,7 +277,7 @@ async function decryptCLI(inputPath, key, options = {}) {
         extension: options.extension,
         overwrite: options.overwrite
     });
-    return this.unableAuthenticateData;
+    return encryptor.unableAuthenticateData;
 }
 
 // 导出模块
