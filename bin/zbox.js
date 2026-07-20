@@ -13,7 +13,7 @@ warnIfUnsupportedNodeVersion(process.versions.node, pkg.engines && pkg.engines.n
 program
   .name('zbox')
   .description('A collection of utility tools for file/git operations, and more')
-  .version(pkg.version);
+  .version(pkg.version, '-v, -V, --version');
 
 require('../src/index');
 
