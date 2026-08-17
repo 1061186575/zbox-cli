@@ -135,7 +135,7 @@ function setUrls(str, urls, urlsName) {
             return false
         }
         return true
-    }).forEach((d, i) => {
+    }).forEach((d) => {
         d = d.trim()
         const arr = d.split(/\s+/)
         urls.push(arr[0])

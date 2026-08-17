@@ -1,5 +1,4 @@
 const { program } = require('commander');
-const { question, secretQuestion } = require("../utils");
 
 // 更新 zbox-cli
 program

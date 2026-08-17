@@ -35,19 +35,19 @@ class TaskController {
 }
 
 
-function test(maxConcurrentTasks = 1) {
-    const controller = new TaskController(maxConcurrentTasks);
-
-    const urls = new Array(20).fill(0).map((d, index) => index + 1);
-
-    for (let url of urls) {
-        controller.addTask(async () => {
-            console.log('开始执行: ', url)
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            console.log('完成: ', url)
-        });
-    }
-}
+// function test(maxConcurrentTasks = 1) {
+//     const controller = new TaskController(maxConcurrentTasks);
+//
+//     const urls = new Array(20).fill(0).map((d, index) => index + 1);
+//
+//     for (let url of urls) {
+//         controller.addTask(async () => {
+//             console.log('开始执行: ', url)
+//             await new Promise(resolve => setTimeout(resolve, 2000))
+//             console.log('完成: ', url)
+//         });
+//     }
+// }
 
 // 一个个执行
 // test(1)

@@ -26,7 +26,7 @@ async function init() {
     m3u8FileName = (await question(`请输入保存的文件名称:`)).trim()
 
     outputFilePath = path.join(saveDir, m3u8FileName)
-    m3u8UrlPath = path.join(saveDir, m3u8Url.replace(/[:\/]/g, '_'))
+    m3u8UrlPath = path.join(saveDir, m3u8Url.replace(/[:/]/g, '_'))
     m3u8TsDir = m3u8UrlPath + '.ts'
 
     if (!fs.existsSync(m3u8TsDir)) {
