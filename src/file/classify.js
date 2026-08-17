@@ -4,6 +4,7 @@ const { existsSync } = require('fs');
 const { question } = require("../utils");
 
 /**
+ * 文件分类, 方便上传备份等
  * 把 SOURCE_DIR 里面的文件按更新时间排序, 然后分类放到 TARGET_DIR 里面,
  * 同时确保 TARGET_DIR 里面的子目录 文件数量 <= MAX_FILE_COUNT && 大小 <= MAX_TOTAL_SIZE_GB
  * @type {string}
