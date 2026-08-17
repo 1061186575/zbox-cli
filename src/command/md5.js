@@ -107,7 +107,6 @@ function calculateFileMd5(filePath) {
 
         stream.on('end', () => {
             const md5Hash = hash.digest('hex');
-            console.log('计算完成！');
             resolve(md5Hash);
         });
 
@@ -136,8 +135,9 @@ async function fileMd5(filePath) {
         // 计算 MD5
         const md5Hash = await calculateFileMd5(resolvedPath);
 
+        console.log('计算完成！');
+        console.log(`${path.basename(resolvedPath)} - ${md5Hash}`);
         console.log(`✅ MD5: ${md5Hash}`);
-        console.log(`📋 ${path.basename(resolvedPath)} - ${md5Hash}`);
 
         return md5Hash;
 
