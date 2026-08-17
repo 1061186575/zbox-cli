@@ -5,7 +5,7 @@ const os = require('os');
 const { encryptCLI, decryptCLI, isEncryptedFile } = require('../../src/file/fileEncryptor');
 
 // 测试用的临时目录
-const testDir = path.join(os.tmpdir(), 'fileEncryptor-test');
+const testDir = path.join(os.tmpdir(), 'zbox-fileEncryptor-test');
 const testKey = 'test-encryption-key-123';
 
 

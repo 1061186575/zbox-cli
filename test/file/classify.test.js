@@ -10,7 +10,7 @@ const { question } = require('../../src/utils')
 const classify = require('../../src/file/classify')
 
 function createTestDir() {
-    return fs.mkdtempSync(path.join(os.tmpdir(), 'classify-test-'))
+    return fs.mkdtempSync(path.join(os.tmpdir(), 'zbox-classify-test-'))
 }
 
 function writeFile(filePath, content) {

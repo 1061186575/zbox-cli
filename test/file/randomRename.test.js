@@ -4,7 +4,7 @@ const path = require('path')
 const randomRename = require('../../src/file/randomRename')
 
 function createTestDir() {
-    return fs.mkdtempSync(path.join(os.tmpdir(), 'randomRename-test-'))
+    return fs.mkdtempSync(path.join(os.tmpdir(), 'zbox-randomRename-test-'))
 }
 
 function readRecordFile(recordPath) {
