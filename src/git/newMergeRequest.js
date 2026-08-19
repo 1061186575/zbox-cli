@@ -29,7 +29,6 @@ function getProjectConfig(configPath) {
         config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     } catch (error) {
         config.error = error;
-        console.error(`读取配置文件失败: ${error.message}`);
     }
     /*
     {
@@ -53,6 +52,32 @@ function getProjectConfig(configPath) {
      */
     config.projectList = Array.isArray(config.projectList) ? config.projectList : [];
     return config
+}
+
+function findDefaultConfigPath(defaultConfigPath) {
+    let currentDir = process.cwd();
+    const rootDir = path.parse(currentDir).root;
+
+    while (true) {
+        const configPath = path.join(currentDir, defaultConfigPath);
+
+        if (fs.existsSync(configPath)) {
+            return configPath;
+        }
+
+        if (currentDir === rootDir) {
+            return '';
+        }
+
+        currentDir = path.dirname(currentDir);
+    }
+}
+
+function getConfigPath(optionsConfigPath, defaultConfigPath) {
+    if (optionsConfigPath) {
+        return path.resolve(optionsConfigPath);
+    }
+    return findDefaultConfigPath(defaultConfigPath);
 }
 
 function getUrl(sourceBranch, title, item, gitlabUrl) {
@@ -160,16 +185,21 @@ async function main(options = {}) {
         console.log(configTemplate);
         return;
     }
-    const defaultConfigPath = '../newMergeRequestConfig.json';
-    const configPath = path.resolve(options.configPath || defaultConfigPath);
+    const defaultConfigPath = 'newMergeRequestConfig.json';
+    const configPath = getConfigPath(options.configPath, defaultConfigPath);
+
+    if (!configPath) {
+        console.error(`未找到配置文件 ${defaultConfigPath}，请使用 -c 参数指定配置文件路径`);
+        return;
+    }
+
     const { gitlabUrl, projectParentPath, projectList = [], error } = getProjectConfig(configPath);
 
     if (!projectList.length) {
-        if (!error) {
+        if (error) {
+            console.error(`读取配置文件失败: ${error.message}`);
+        } else {
             console.log('项目列表 projectList 不能为空');
-        }
-        if (error && options.configPath === defaultConfigPath) {
-            console.log(`请使用 -c 参数指定配置文件路径`);
         }
         return;
     }
@@ -215,7 +245,7 @@ async function main(options = {}) {
         let firstCommitMsg = '';
         if (!title) {
             firstCommitMsg = `"${getFirstCommitMsg(projectPath, sourceBranch) || sourceBranch}"`;
-            title = await question(`Merge requests 标题(${firstCommitMsg}): `) || firstCommitMsg;
+            title = await question(`合并标题(${firstCommitMsg}): `) || firstCommitMsg;
         }
 
         const url = getUrl(sourceBranch, title || firstCommitMsg, item, gitlabUrl);
