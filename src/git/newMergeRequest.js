@@ -244,7 +244,7 @@ async function main(options = {}) {
 
         let firstCommitMsg = '';
         if (!title) {
-            firstCommitMsg = `"${getFirstCommitMsg(projectPath, sourceBranch) || sourceBranch}"`;
+            firstCommitMsg = getFirstCommitMsg(projectPath, sourceBranch) || sourceBranch;
             title = await question(`合并标题(${firstCommitMsg}): `) || firstCommitMsg;
         }
 
