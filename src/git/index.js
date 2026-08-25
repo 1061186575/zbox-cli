@@ -6,12 +6,13 @@ git.description('执行 git 操作');
 
 git
     .command('qa')
-    .description('QA 分支发布工具，先合并 master 到当前分支, 然后合并当前分支到 QA 分支')
+    .description('QA 分支发布工具，运行命令会合并 master 到当前分支, 然后合并当前分支到 QA 分支')
     .option('-b, --branch <branch>', '指定 qa 分支名称', 'qa')
     .option('-m, --master <master>', '指定 master 分支名称', 'master')
     .option('--noMergeMaster', '不合并 master 到当前分支', false)
+    .option('--abortOnConflict', '检测到合并冲突时放弃合并', true)
     .action(options => {
-        require('./qaRelease')(options.branch, options.master, options.noMergeMaster);
+        require('./qaRelease')(options.branch, options.master, options.noMergeMaster, options.abortOnConflict);
     });
 
 git

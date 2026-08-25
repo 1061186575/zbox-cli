@@ -13,7 +13,7 @@
 const { execSync } = require('child_process');
 const defaultMasterBranch = 'master'; // master or main
 
-async function main(targetBranch, masterBranch = defaultMasterBranch, noMergeMaster) {
+async function main(targetBranch, masterBranch = defaultMasterBranch, noMergeMaster = false, abortOnConflict = true) {
     console.time('总运行耗时');
     const curBranch = execSync(`git branch --show-current`).toString().trim();
 
@@ -65,7 +65,10 @@ async function main(targetBranch, masterBranch = defaultMasterBranch, noMergeMas
             }
             console.log(`命令 ${cmd} 执行失败, 请手动发布到 ${targetBranch} 分支`);
             if (cmd.startsWith('git merge ')) {
-                await execSync(mergeAbort);
+                if (abortOnConflict) {
+                    await execSync(mergeAbort);
+                    console.log(`已执行: ${mergeAbort}`);
+                }
                 console.log('检测到存在合并冲突, 请先手动解决冲突');
             }
             return;
