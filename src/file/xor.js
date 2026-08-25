@@ -2,8 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_CHUNK_SIZE = 1024 * 1024;
+// 注意: 这并不安全!!! 只是简单混淆, 不是加密
+const DEFAULT_KEY = 'A3F8C1E45B6D9A2C7E0F3B8D1C4A6E9F2B5C8D0E3F6A7B9C1D4E5F8A2B3C6D7E';
 
-function createKeyBuffer(key = '') {
+function createKeyBuffer(key = DEFAULT_KEY) {
     // if (key === undefined || key === null || String(key).length === 0) {
     //     throw new Error('异或密钥不能为空');
     // }
