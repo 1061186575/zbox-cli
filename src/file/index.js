@@ -7,6 +7,21 @@ const file = program.command('file');
 
 file.description('执行文件操作');
 
+// 文件异或加解密工具
+file
+    .command('xor')
+    .description('xor, 使用循环异或密钥对文件或目录进行加解密（重复执行即可还原）')
+    .argument('<input>', '要处理的文件或目录路径')
+    .requiredOption('-k, --key <key>', '异或密钥')
+    .option('-o, --output <path>', '输出路径（默认原地处理）')
+    .option('--no-recursive', '不递归处理子目录')
+    .option('--overwrite', '覆盖已存在的输出文件')
+    .action(async (input, options) => {
+        const inputPath = path.resolve(input);
+        const outputFiles = await require('./xor').xor(inputPath, options.key, options);
+        console.log(`✅ 异或处理完成，共处理 ${outputFiles.length} 个文件`);
+    });
+
 // 文件随机重命名工具
 file
     .command('rr') // randomRename
