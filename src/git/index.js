@@ -27,6 +27,7 @@ git
     .description('创建 Gitlab 合并请求, 会一次查找所有项目下的指定分支(避免遗漏)来创建 Merge 合并请求, 自动填写合并标题')
     .option('-c, --configPath <path>', '指定配置文件路径，不指定时向上查找 newMergeRequestConfig.json')
     .option('-p, --printConfigTemplate', '输出 newMergeRequestConfig.json 模板文件')
+    .option('--fetchBranch', '检测分支前先从 origin 刷新目标分支', true)
     .action(options => {
         require('./newMergeRequest')(options);
     });

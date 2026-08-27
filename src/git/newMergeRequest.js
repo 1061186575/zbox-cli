@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { execFileSync, spawn, execSync } = require('child_process');
+const { promisify } = require('util');
+const { execFile, execFileSync, spawn, execSync } = require('child_process');
+const execFileAsync = promisify(execFile);
 
 const configTemplate = `{
     "gitlabUrl": "https://gitlab.com",
@@ -116,6 +118,23 @@ function hasBranch(projectPath, branchName) {
     });
 }
 
+async function fetchBranch(projectPath, branchName) {
+    try {
+        await execFileAsync('git', [
+            '-C',
+            projectPath,
+            'fetch',
+            'origin',
+            `refs/heads/${branchName}:refs/remotes/origin/${branchName}`
+        ], {
+            stdio: 'ignore'
+        });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 function getBranchRef(projectPath, branchName) {
     try {
         execFileSync('git', ['-C', projectPath, 'show-ref', '--verify', '--quiet', `refs/heads/${branchName}`], {
@@ -218,6 +237,7 @@ async function main(options = {}) {
 
     let title = options.title;
     let findOne = false;
+    const projects = [];
 
     for(let i = 0; i < projectList.length; i++) {
         const item = projectList[i];
@@ -237,6 +257,15 @@ async function main(options = {}) {
             console.error(`${projectPath} 路径不是一个目录`);
             continue;
         }
+
+        projects.push({ item, projectPath });
+    }
+
+    if (options.fetchBranch) {
+        await Promise.all(projects.map(({ projectPath }) => fetchBranch(projectPath, sourceBranch)));
+    }
+
+    for (const { item, projectPath } of projects) {
 
         if (!hasBranch(projectPath, sourceBranch)) {
             continue;
