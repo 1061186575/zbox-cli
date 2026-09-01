@@ -4,9 +4,10 @@ const readline = require('readline');
 const { promisify } = require('util');
 const { execFile, execFileSync, spawn, execSync } = require('child_process');
 const execFileAsync = promisify(execFile);
+const redText = text => `\x1b[31m${text}\x1b[0m`;
 
 const configTemplate = `{
-    "gitlabUrl": "https://gitlab.com",
+    "gitlabUrl": "https://gitlab.xxx.com",
     "projectParentPath": "/Users/admin/project",
     "projectList": [
         {
@@ -100,22 +101,96 @@ function isDirectory(dir) {
     }
 }
 
-function hasBranch(projectPath, branchName) {
-    const refs = [
-        `refs/heads/${branchName}`,
-        `refs/remotes/origin/${branchName}`
-    ];
+function hasRef(projectPath, ref) {
+    try {
+        execFileSync('git', ['-C', projectPath, 'show-ref', '--verify', '--quiet', ref], {
+            stdio: 'ignore'
+        });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
 
-    return refs.some(ref => {
-        try {
-            execFileSync('git', ['-C', projectPath, 'show-ref', '--verify', '--quiet', ref], {
-                stdio: 'ignore'
-            });
-            return true;
-        } catch (error) {
-            return false;
+function hasLocalBranch(projectPath, branchName) {
+    return hasRef(projectPath, `refs/heads/${branchName}`);
+}
+
+function hasRemoteBranch(projectPath, branchName) {
+    return hasRef(projectPath, `refs/remotes/origin/${branchName}`);
+}
+
+function hasBranch(projectPath, branchName) {
+    return hasLocalBranch(projectPath, branchName) || hasRemoteBranch(projectPath, branchName);
+}
+
+function getProjectCurrentBranch(projectPath) {
+    try {
+        return execFileSync('git', ['-C', projectPath, 'branch', '--show-current'], {
+            encoding: 'utf8'
+        }).trim();
+    } catch (error) {
+        return '';
+    }
+}
+
+function getWorkingTreeChanges(projectPath) {
+    try {
+        return execFileSync('git', ['-C', projectPath, 'status', '--porcelain'], {
+            encoding: 'utf8'
+        }).trim();
+    } catch (error) {
+        return '';
+    }
+}
+
+function getUnpushedCommitCount(projectPath, branchName) {
+    return Number(execFileSync('git', [
+        '-C',
+        projectPath,
+        'rev-list',
+        '--count',
+        `origin/${branchName}..${branchName}`
+    ], {
+        encoding: 'utf8'
+    }).trim());
+}
+
+function getProjectWarnings(projectPath, branchName) {
+    if (!hasLocalBranch(projectPath, branchName)) {
+        return [];
+    }
+
+    const warnings = [];
+    const projectName = path.basename(projectPath);
+
+    if (getProjectCurrentBranch(projectPath) === branchName && getWorkingTreeChanges(projectPath)) {
+        warnings.push(`${projectName}: 当前分支 ${branchName} 存在未 commit 的代码，请提交并 push 后再确认上线范围`);
+    }
+
+    if (!hasRemoteBranch(projectPath, branchName)) {
+        warnings.push(`${projectName}: 本地分支 ${branchName} 尚未 push 到 origin，Merge Request 无法包含该分支代码`);
+        return warnings;
+    }
+
+    try {
+        const unpushedCommitCount = getUnpushedCommitCount(projectPath, branchName);
+        if (unpushedCommitCount > 0) {
+            warnings.push(`${projectName}: 本地分支 ${branchName} 有 ${unpushedCommitCount} 个 commit 尚未 push，Merge Request 不会包含这些代码`);
         }
-    });
+    } catch (error) {
+        warnings.push(`${projectName}: 无法检查 ${branchName} 是否存在未 push 的 commit，请手动确认`);
+    }
+
+    return warnings;
+}
+
+function printWarnings(warnings) {
+    if (!warnings.length) {
+        return;
+    }
+
+    console.error(redText(`\n警告：以下代码可能未包含在 Merge Request 中：\n${warnings.map(warning => `- ${warning}`).join('\n')}`));
 }
 
 async function fetchBranch(projectPath, branchName) {
@@ -201,6 +276,7 @@ function question(text) {
 
 async function main(options = {}) {
     if (options.printConfigTemplate) {
+        console.log('建议把配置文件放到所有项目的父路径\nnewMergeRequestConfig.json');
         console.log(configTemplate);
         return;
     }
@@ -238,6 +314,7 @@ async function main(options = {}) {
     let title = options.title;
     let findOne = false;
     const projects = [];
+    const warnings = [];
 
     for(let i = 0; i < projectList.length; i++) {
         const item = projectList[i];
@@ -266,6 +343,7 @@ async function main(options = {}) {
     }
 
     for (const { item, projectPath } of projects) {
+        warnings.push(...getProjectWarnings(projectPath, sourceBranch));
 
         if (!hasBranch(projectPath, sourceBranch)) {
             continue;
@@ -286,6 +364,10 @@ async function main(options = {}) {
     if (!findOne) {
         console.log(`${projectList.map(item => item.name).join('、')} 项目没有找到 ${sourceBranch} 分支`);
     }
+
+    printWarnings(warnings);
 }
 
 module.exports = main;
+module.exports.getProjectWarnings = getProjectWarnings;
+module.exports.printWarnings = printWarnings;
