@@ -339,6 +339,8 @@ async function main(options = {}) {
     }
 
     if (options.fetchBranch) {
+        // 如果是别人创建的分支，自己的项目本地可能不存在该分支，所以需要更新
+        console.log('更新所有项目的远程分支...');
         await Promise.all(projects.map(({ projectPath }) => fetchBranch(projectPath, sourceBranch)));
     }
 
@@ -356,8 +358,10 @@ async function main(options = {}) {
         }
 
         const url = getUrl(sourceBranch, title || firstCommitMsg, item, gitlabUrl);
-        console.log(projectPath, url);
-        openUrl(url);
+        console.log(projectPath, url, '\n');
+        if (options.open) {
+            openUrl(url);
+        }
         findOne = true;
     }
 
