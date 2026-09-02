@@ -10,11 +10,12 @@ class TaskController {
             const taskWrapper = async () => {
                 try {
                     const result = await task();
-                    this.runningTasks--;
                     resolve(result);
-                    this.runNextTask();
                 } catch (error) {
                     reject(error);
+                } finally {
+                    this.runningTasks--;
+                    this.runNextTask();
                 }
             };
 

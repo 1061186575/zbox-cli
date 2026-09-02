@@ -7,6 +7,13 @@ const file = program.command('file');
 
 file.description('执行文件操作');
 
+file
+    .command('repairMediaTime <input>')
+    .description('根据图片或视频内置的拍摄时间，修复文件创建时间和更新时间')
+    .option('--no-recursive', '不递归处理子目录')
+    .option('-c, --concurrency <count>', '最大并发处理个数', '10')
+    .action((input, options) => require('./repairMediaTime')(input, options));
+
 // 文件异或加解密工具
 file
     .command('xor')

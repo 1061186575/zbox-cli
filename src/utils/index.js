@@ -1,5 +1,7 @@
 const readline = require("readline");
 const os = require("os");
+const fs = require('fs').promises;
+const path = require('path');
 const { spawn, execSync } = require("child_process");
 
 function question(query) {
@@ -141,6 +143,34 @@ function formatDateTime(input = new Date()) {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+async function getAllFilePaths(inputPath, recursive = true) {
+    const resolvedPath = path.resolve(inputPath);
+    const stats = await fs.stat(resolvedPath);
+
+    if (stats.isFile()) {
+        return [resolvedPath];
+    }
+
+    if (!stats.isDirectory()) {
+        return [];
+    }
+
+    const filePaths = [];
+    const items = await fs.readdir(resolvedPath, { withFileTypes: true });
+
+    for (const item of items) {
+        const itemPath = path.join(resolvedPath, item.name);
+
+        if (item.isFile()) {
+            filePaths.push(itemPath);
+        } else if (item.isDirectory() && recursive) {
+            filePaths.push(...await getAllFilePaths(itemPath, recursive));
+        }
+    }
+
+    return filePaths;
+}
+
 /**
  * 复制文本到系统粘贴板
  * @param {string} text - 要复制的文本
@@ -200,5 +230,6 @@ module.exports = {
     spawnExec,
     getIps,
     formatDateTime,
+    getAllFilePaths,
     copyToClipboard,
 }
