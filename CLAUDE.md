@@ -32,10 +32,9 @@ The CLI follows a modular command structure organized by functionality:
 - **Main Entry**: `bin/zbox.js` - CLI entry point with Commander.js setup
 - **Core Module**: `src/index.js` - Root command definitions and imports
 - **Command Modules**:
-  - `src/git/` - Git operations (batch commands, QA releases, branch cleanup)
-  - `src/file/` - File operations (encryption, downloads, SCP deployment)
-  - `src/command/` - Utility commands (HTTP server, device finder, MD5, TOTP)
-  - `src/ke/` - Development tools (URL to API code generator)
+    - `src/git/` - Git operations (batch commands, QA releases, branch cleanup)
+    - `src/file/` - File operations (encryption, downloads, SCP deployment)
+    - `src/command/` - Utility commands (QRCode, MD5)
 
 ### Key Architectural Patterns
 
@@ -83,27 +82,14 @@ Core utilities in `src/utils/index.js`:
 - **MD5 Utility**: Hash calculation with iteration and encoding options
 - **TOTP Generator**: Time-based one-time password generation
 
-## Configuration Files
-
-### SCP Deployment
-Uses `publishConfig.js` files for deployment configuration:
-```javascript
-module.exports = {
-  host: 'server.com',
-  username: 'user',
-  password: 'pass', // or privateKey
-  remotePath: '/var/www/html',
-  localPath: './dist',
-  exclude: ['node_modules', '.git', '*.log']
-};
-```
-
 ## Testing Strategy
 
 - **Jest Framework**: Comprehensive unit testing with mocking
 - **Command Testing**: Direct function testing with mocked dependencies
 - **Input Validation**: Extensive parameter validation testing
 - **Known Test Vectors**: Uses standard test cases for cryptographic functions
+
+You can view this file when writing test cases: `test/utils/index.test.js`
 
 ## Dependencies
 

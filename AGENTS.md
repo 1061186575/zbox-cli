@@ -34,8 +34,7 @@ The CLI follows a modular command structure organized by functionality:
 - **Command Modules**:
   - `src/git/` - Git operations (batch commands, QA releases, branch cleanup)
   - `src/file/` - File operations (encryption, downloads, SCP deployment)
-  - `src/command/` - Utility commands (HTTP server, device finder, MD5, TOTP)
-  - `src/ke/` - Development tools (URL to API code generator)
+  - `src/command/` - Utility commands (QRCode, MD5)
 
 ### Key Architectural Patterns
 
@@ -90,7 +89,7 @@ Core utilities in `src/utils/index.js`:
 - **Input Validation**: Extensive parameter validation testing
 - **Known Test Vectors**: Uses standard test cases for cryptographic functions
 
-You can refer to this file when writing test cases: `test/utils/index.test.js`
+You can view this file when writing test cases: `test/utils/index.test.js`
 
 ## Dependencies
 
