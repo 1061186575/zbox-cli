@@ -4,7 +4,8 @@
     "description": "A collection of utility tools for file/git/scp operations, and more",
     "main": "src/index.js",
     "bin": {
-        "zbox": "bin/zbox.js"
+        "zbox": "bin/zbox.js",
+        "ke": "bin/ke.js"
     },
     "scripts": {
         "test": "jest",
