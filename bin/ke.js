@@ -18,6 +18,12 @@ program
     .option('-u, --url <url>', '指定目标分支')
     .action(api);
 
+program
+    .command('rapi [uri]')
+    .description('通过 api uri 找到对应的 action url')
+    .option('-u, --url <url>', '指定 api uri')
+    .action(rapi);
+
 
 program.parse(process.argv);
 
@@ -72,6 +78,88 @@ function api(options) {
         return
     }
     prompt('请求的 url 是?\n').then(res => {
+        find(res)
+    })
+}
+
+function rapi(url, options) {
+    let actions = 'server/src/actions'
+    let apis = 'server/src/apis'
+
+    function prompt(query) {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        })
+        return new Promise(resolve => {
+            rl.question(query, (str) => {
+                resolve(str)
+                rl.close();
+            })
+        })
+    }
+
+    function getFiles(directory) {
+        return fs.readdirSync(directory, { withFileTypes: true }).flatMap(item => {
+            const itemPath = path.join(directory, item.name)
+            return item.isDirectory() ? getFiles(itemPath) : [itemPath]
+        })
+    }
+
+    function escapeRegExp(value) {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+
+    function find(targetUri) {
+        const cwd = process.cwd()
+        const apisDirectory = path.join(cwd, apis)
+        const actionsDirectory = path.join(cwd, actions)
+        const normalizedUri = targetUri.replace(/^\/+/, '')
+        const apiReg = /api\(\s*(['"])([^'"]+)\1\s*,\s*\{[\W\w]*?\}\s*\)/g
+        const matches = []
+
+        getFiles(apisDirectory)
+            .filter(filePath => path.extname(filePath) === '.js')
+            .forEach(filePath => {
+                const content = fs.readFileSync(filePath, 'utf8')
+                let apiMatch
+                while ((apiMatch = apiReg.exec(content))) {
+                    const uriMatch = apiMatch[0].match(/uri\s*:\s*(['"])([^'"]+)\1/)
+                    if (uriMatch?.[2].replace(/^\/+/, '') === normalizedUri) {
+                        matches.push({
+                            fileName: path.basename(filePath, '.js'),
+                            fnName: apiMatch[2]
+                        })
+                    }
+                }
+            })
+
+        const urls = new Set()
+        const actionFiles = getFiles(actionsDirectory).filter(filePath => path.extname(filePath) === '.js')
+        matches.forEach(({ fileName, fnName }) => {
+            const apiPathReg = new RegExp(`API\\.${escapeRegExp(fileName)}\\.${escapeRegExp(fnName)}\\b`)
+            actionFiles.forEach(filePath => {
+                const content = fs.readFileSync(filePath, 'utf8')
+                if (apiPathReg.test(content)) {
+                    const relativePath = path.relative(actionsDirectory, filePath).replace(/\\/g, '/').replace(/\.js$/, '')
+                    urls.add(`/${relativePath}`)
+                }
+            })
+        })
+
+        if (!urls.size) {
+            console.log('未找到对应的前端 url')
+            return
+        }
+        urls.forEach(url => console.log('找到前端 url:', url))
+    }
+
+    const targetUri = options.url || url
+    if (targetUri) {
+        find(targetUri)
+        return
+    }
+    prompt('请求的 api url 是?\n').then(res => {
         find(res)
     })
 }
