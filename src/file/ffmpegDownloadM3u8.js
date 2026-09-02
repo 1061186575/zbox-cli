@@ -2,7 +2,7 @@ const path = require('path')
 const fs = require('fs')
 const { spawnSync } = require('child_process')
 const readline = require('readline')
-const { TaskController } = require("../utils/TaskController");
+const { TaskController } = require("../utils/taskController");
 
 
 let ffmpegFile = 'ffmpeg'

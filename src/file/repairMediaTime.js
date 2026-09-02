@@ -1,6 +1,6 @@
 const path = require('path');
 const { ExifTool, ExifDateTime } = require('exiftool-vendored');
-const { TaskController } = require('../utils/TaskController');
+const { TaskController } = require('../utils/taskController');
 const { formatDateTime, getAllFilePaths } = require('../utils');
 
 const mediaExtensions = new Set([
