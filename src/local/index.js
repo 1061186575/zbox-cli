@@ -217,11 +217,10 @@ local.command('list')
             try {
                 const stat = fs.statSync(pathItem);
                 const type = stat.isFile() ? '[文件]' : '[目录]';
-                console.log(`  ${index + 1}. ${type} ${pathItem}`);
 
                 const commandFiles = getCommandFiles(pathItem);
                 if (commandFiles.length === 0) {
-                    console.log('     未发现可用命令');
+                    console.log(`  ${index + 1}. 未发现可用命令: ${type} ${pathItem}`);
                     return;
                 }
 
@@ -233,7 +232,8 @@ local.command('list')
                     }
 
                     const description = info.description ? ` - ${info.description}` : '';
-                    console.log(`     ${info.command}${description}`);
+                    console.log(`  ${index + 1}. ${info.command}${description}`);
+                    console.log(`     ${type} ${pathItem}`);
                 });
             } catch (error) {
                 console.log(`  ${index + 1}. [无效] ${pathItem}`);
