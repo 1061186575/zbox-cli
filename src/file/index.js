@@ -49,16 +49,21 @@ file
     .description('encrypt, 加密文件或目录')
     .argument('<input>', '要加密的文件或目录路径')
     .option('-o, --output <path>', '输出路径（默认：原路径 + .encrypted）')
-    .option('-e, --extension <ext>', '加密文件后缀（默认：.encrypted）', '.encrypted')
+    .option('-e, --extension <ext>', '加密文件后缀', '.encrypted')
     .option('--no-recursive', '不递归处理子目录')
     .option('--overwrite', '覆盖已存在的文件', false)
     .option('--delete-source', '加密成功后删除源文件或目录', false)
     .action(async (input, options) => {
         input = path.resolve(input);
         console.log('加密的文件或目录路径: ', input);
-        const key = await question('加密密钥:')
-        await require('./fileEncryptor').encryptCLI(input, key, options);
-        console.log('✅ 加密完成！');
+        try {
+            const key = await question('加密密钥:')
+            const outputPath = await require('./fileEncryptor').encryptCLI(input, key, options);
+            console.log(`✅ 加密完成: ${outputPath}`);
+        } catch (error) {
+            console.error(`❌ 加密失败: ${error.message}`);
+            process.exitCode = 1;
+        }
     });
 file
     .command('de') // decrypt
@@ -72,12 +77,13 @@ file
     .action(async (input, options) => {
         input = path.resolve(input);
         console.log('解密的文件或目录路径: ', input);
-        const key = await question('解密密钥:')
-        const unableAuthenticateData = await require('./fileEncryptor').decryptCLI(input, key, options);
-        if (unableAuthenticateData) {
-            console.log('❌ 解密失败！');
-        } else {
-            console.log('✅ 解密完成！');
+        try {
+            const key = await question('解密密钥:')
+            const outputPath = await require('./fileEncryptor').decryptCLI(input, key, options);
+            console.log(`✅ 解密完成: ${outputPath}`);
+        } catch (error) {
+            console.error(`❌ 解密失败: ${error.message}`);
+            process.exitCode = 1;
         }
     });
 

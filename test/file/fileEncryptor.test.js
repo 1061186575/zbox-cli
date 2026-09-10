@@ -2,7 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
-const { encryptCLI, decryptCLI, isEncryptedFile } = require('../../src/file/fileEncryptor');
+const {
+    encryptCLI,
+    decryptCLI,
+    isEncryptedFile,
+    SMALL_FILE_MAX_SIZE
+} = require('../../src/file/fileEncryptor');
 
 // 测试用的临时目录
 const testDir = path.join(os.tmpdir(), 'zbox-fileEncryptor-test');
@@ -282,6 +287,94 @@ describe('FileEncryptor', () => {
 
             await fs.promises.unlink(encryptedFile);
         });
+
+        test('should reject deleting a non-recursively processed directory', async () => {
+            const sourceDir = path.join(testDir, 'nonrecursive-delete-source');
+            const childFile = path.join(sourceDir, 'subdir', 'child.txt');
+            await fs.promises.mkdir(path.dirname(childFile), { recursive: true });
+            await fs.promises.writeFile(childFile, 'Must not be deleted');
+
+            await expect(encryptCLI(sourceDir, testKey, {
+                recursive: false,
+                deleteSource: true
+            })).rejects.toThrow('非递归处理目录时不能删除源目录');
+
+            expect(await fs.promises.readFile(childFile, 'utf8')).toBe('Must not be deleted');
+            expect(fs.existsSync(sourceDir + '.encrypted')).toBe(false);
+            await fs.promises.rm(sourceDir, { recursive: true, force: true });
+        });
+    });
+
+    describe('Atomic Directory Processing', () => {
+        test('should not leave partial output when directory decryption fails', async () => {
+            const sourceDir = path.join(testDir, 'atomic-source');
+            const encryptedDir = sourceDir + '.encrypted';
+            await fs.promises.mkdir(sourceDir, { recursive: true });
+            await fs.promises.writeFile(path.join(sourceDir, 'a.txt'), 'Valid content');
+            await fs.promises.writeFile(path.join(sourceDir, 'z.txt'), 'Content to corrupt');
+
+            await encryptCLI(sourceDir, testKey);
+            await fs.promises.rm(sourceDir, { recursive: true, force: true });
+            await fs.promises.writeFile(path.join(encryptedDir, 'z.txt'), 'invalid encrypted content');
+
+            await expect(decryptCLI(encryptedDir, testKey)).rejects.toThrow('解密失败');
+            expect(fs.existsSync(sourceDir)).toBe(false);
+            expect(fs.existsSync(encryptedDir)).toBe(true);
+
+            await fs.promises.rm(encryptedDir, { recursive: true, force: true });
+        });
+
+        test('should reject an output directory inside the input directory', async () => {
+            const sourceDir = path.join(testDir, 'nested-output-source');
+            await fs.promises.mkdir(sourceDir, { recursive: true });
+            await fs.promises.writeFile(path.join(sourceDir, 'file.txt'), 'Content');
+
+            await expect(encryptCLI(sourceDir, testKey, {
+                output: path.join(sourceDir, 'backup')
+            })).rejects.toThrow('不能互相包含');
+
+            expect(fs.existsSync(path.join(sourceDir, 'backup'))).toBe(false);
+            await fs.promises.rm(sourceDir, { recursive: true, force: true });
+        });
+    });
+
+    describe('Symbolic Links', () => {
+        test('should preserve symbolic links during directory encryption and decryption', async () => {
+            if (process.platform === 'win32') return;
+
+            const sourceDir = path.join(testDir, 'symlink-source');
+            const encryptedDir = sourceDir + '.encrypted';
+            await fs.promises.mkdir(sourceDir, { recursive: true });
+            await fs.promises.writeFile(path.join(sourceDir, 'target.txt'), 'Target content');
+            await fs.promises.symlink('target.txt', path.join(sourceDir, 'link.txt'));
+
+            await encryptCLI(sourceDir, testKey, { deleteSource: true });
+            expect((await fs.promises.lstat(path.join(encryptedDir, 'link.txt'))).isSymbolicLink()).toBe(true);
+
+            await decryptCLI(encryptedDir, testKey, { deleteSource: true });
+            expect((await fs.promises.lstat(path.join(sourceDir, 'link.txt'))).isSymbolicLink()).toBe(true);
+            expect(await fs.promises.readFile(path.join(sourceDir, 'link.txt'), 'utf8')).toBe('Target content');
+
+            await fs.promises.rm(sourceDir, { recursive: true, force: true });
+        });
+    });
+
+    describe('Large File Streaming', () => {
+        test('should encrypt and decrypt files larger than the small-file threshold', async () => {
+            const testFile = path.join(testDir, 'large-stream.bin');
+            const encryptedFile = testFile + '.encrypted';
+            const originalData = Buffer.alloc(SMALL_FILE_MAX_SIZE + 1, 0x5A);
+            await fs.promises.writeFile(testFile, originalData);
+
+            await encryptCLI(testFile, testKey, { deleteSource: true });
+            await decryptCLI(encryptedFile, testKey, { deleteSource: true });
+
+            const decryptedData = await fs.promises.readFile(testFile);
+            expect(crypto.createHash('sha256').update(decryptedData).digest('hex'))
+                .toBe(crypto.createHash('sha256').update(originalData).digest('hex'));
+
+            await fs.promises.unlink(testFile);
+        });
     });
 
     describe('Overwrite Protection', () => {
@@ -349,6 +442,18 @@ describe('FileEncryptor', () => {
             expect(isEncryptedFile(testFile)).toBe(false);
 
             // 清理
+            await fs.promises.unlink(testFile);
+            await fs.promises.unlink(encryptedFile);
+        });
+
+        test('should identify an encrypted empty file', async () => {
+            const testFile = path.join(testDir, 'identify-empty.txt');
+            const encryptedFile = testFile + '.encrypted';
+            await fs.promises.writeFile(testFile, '');
+
+            await encryptCLI(testFile, testKey);
+            expect(isEncryptedFile(encryptedFile)).toBe(true);
+
             await fs.promises.unlink(testFile);
             await fs.promises.unlink(encryptedFile);
         });
@@ -492,6 +597,21 @@ describe('FileEncryptor', () => {
             // 清理
             await fs.promises.unlink(testFile);
             await fs.promises.unlink(encryptedFile);
+        });
+
+        test('should append .decrypted when the input has no encrypted extension', async () => {
+            const testFile = path.join(testDir, 'extensionless-source.txt');
+            const encryptedFile = path.join(testDir, 'cipher.bin');
+            const decryptedFile = encryptedFile + '.decrypted';
+            await fs.promises.writeFile(testFile, 'Extensionless encrypted input');
+
+            await encryptCLI(testFile, testKey, { output: encryptedFile });
+            await fs.promises.unlink(testFile);
+            await decryptCLI(encryptedFile, testKey);
+
+            expect(await fs.promises.readFile(decryptedFile, 'utf8')).toBe('Extensionless encrypted input');
+            await fs.promises.unlink(encryptedFile);
+            await fs.promises.unlink(decryptedFile);
         });
     });
 });
