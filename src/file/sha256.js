@@ -48,7 +48,7 @@ async function fileSha256Single(filePath) {
         const resolvedPath = path.resolve(filePath);
         const sha256Hash = await calculateFileSha256(resolvedPath);
 
-        console.log(`${path.basename(resolvedPath)} ✅ SHA-256:  ${sha256Hash}`);
+        console.log(`${path.basename(resolvedPath)} ✅ SHA-256: ${sha256Hash}`);
 
         return sha256Hash;
     } catch (error) {

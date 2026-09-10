@@ -27,7 +27,7 @@ describe('fileSha256', () => {
         const expected = crypto.createHash('sha256').update(content).digest('hex');
 
         expect(result).toBe(expected);
-        expect(console.log).toHaveBeenCalledWith(`✅ SHA-256: ${expected}`);
+        expect(console.log).toHaveBeenCalledWith(`test.txt ✅ SHA-256: ${expected}`);
     });
 
     test('should calculate the SHA-256 hash of an empty file', async () => {
