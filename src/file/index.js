@@ -51,7 +51,8 @@ file
     .option('-o, --output <path>', '输出路径（默认：原路径 + .encrypted）')
     .option('-e, --extension <ext>', '加密文件后缀（默认：.encrypted）', '.encrypted')
     .option('--no-recursive', '不递归处理子目录')
-    .option('--overwrite', '覆盖已存在的文件')
+    .option('--overwrite', '覆盖已存在的文件', false)
+    .option('--delete-source', '加密成功后删除源文件或目录', false)
     .action(async (input, options) => {
         input = path.resolve(input);
         console.log('加密的文件或目录路径: ', input);
@@ -66,7 +67,8 @@ file
     .option('-o, --output <path>', '输出路径（默认：移除 .encrypted 后缀）')
     .option('-e, --extension <ext>', '加密文件后缀（默认：.encrypted）', '.encrypted')
     .option('--no-recursive', '不递归处理子目录')
-    .option('--overwrite', '覆盖已存在的文件')
+    .option('--overwrite', '覆盖已存在的文件', false)
+    .option('--delete-source', '解密成功后删除源文件或目录', false)
     .action(async (input, options) => {
         input = path.resolve(input);
         console.log('解密的文件或目录路径: ', input);

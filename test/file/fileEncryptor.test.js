@@ -56,14 +56,13 @@ describe('FileEncryptor', () => {
             // 删除原文件，然后解密
             await fs.promises.unlink(testFile);
 
-            // 解密文件 (会生成 .decrypted 文件)
+            // 解密文件（恢复原文件名）
             await decryptCLI(encryptedFile, testKey);
-            const actualDecryptedFile = encryptedFile + '.decrypted';
-            const decryptedContent = await fs.promises.readFile(actualDecryptedFile, 'utf8');
+            const decryptedContent = await fs.promises.readFile(decryptedFile, 'utf8');
             expect(decryptedContent).toBe(testContent);
 
             // 清理
-            await fs.promises.unlink(actualDecryptedFile);
+            await fs.promises.unlink(decryptedFile);
             await fs.promises.unlink(encryptedFile);
         });
 
@@ -103,13 +102,12 @@ describe('FileEncryptor', () => {
             await fs.promises.unlink(testFile);
             await decryptCLI(encryptedFile, testKey);
 
-            // 验证解密后的文件也是空的 (会生成 .decrypted 文件)
-            const actualDecryptedFile = encryptedFile + '.decrypted';
-            const decryptedContent = await fs.promises.readFile(actualDecryptedFile);
+            // 验证解密后的文件也是空的
+            const decryptedContent = await fs.promises.readFile(testFile);
             expect(decryptedContent.length).toBe(0);
 
             // 清理
-            await fs.promises.unlink(actualDecryptedFile);
+            await fs.promises.unlink(testFile);
             await fs.promises.unlink(encryptedFile);
         });
 
@@ -128,13 +126,12 @@ describe('FileEncryptor', () => {
             await fs.promises.unlink(testFile);
             await decryptCLI(encryptedFile, testKey);
 
-            // 验证内容 (会生成 .decrypted 文件)
-            const actualDecryptedFile = encryptedFile + '.decrypted';
-            const decryptedContent = await fs.promises.readFile(actualDecryptedFile, 'utf8');
+            // 验证内容
+            const decryptedContent = await fs.promises.readFile(testFile, 'utf8');
             expect(decryptedContent).toBe(largeContent);
 
             // 清理
-            await fs.promises.unlink(actualDecryptedFile);
+            await fs.promises.unlink(testFile);
             await fs.promises.unlink(encryptedFile);
         });
     });
@@ -193,10 +190,12 @@ describe('FileEncryptor', () => {
             // 加密目录
             await encryptCLI(sourceDir, testKey);
             expect(fs.existsSync(encryptedDir)).toBe(true);
-            expect(fs.existsSync(path.join(encryptedDir, 'file1.txt.encrypted'))).toBe(true);
-            expect(fs.existsSync(path.join(encryptedDir, 'subdir', 'file3.txt.encrypted'))).toBe(true);
+            expect(fs.existsSync(path.join(encryptedDir, 'file1.txt'))).toBe(true);
+            expect(fs.existsSync(path.join(encryptedDir, 'subdir', 'file3.txt'))).toBe(true);
+            expect(fs.existsSync(path.join(encryptedDir, 'subdir.encrypted'))).toBe(false);
 
-            // 解密目录 (根据 getOutputPath 逻辑，加密目录解密时会恢复原目录名)
+            // 删除源目录后解密，恢复原目录名和内部文件名
+            await fs.promises.rm(sourceDir, { recursive: true, force: true });
             await decryptCLI(encryptedDir, testKey);
 
             // 验证解密后的内容 (应该恢复到原目录结构)
@@ -224,13 +223,64 @@ describe('FileEncryptor', () => {
             // 非递归加密
             await encryptCLI(sourceDir, testKey, { recursive: false });
 
-            expect(fs.existsSync(path.join(encryptedDir, 'file1.txt.encrypted'))).toBe(true);
+            expect(fs.existsSync(path.join(encryptedDir, 'file1.txt'))).toBe(true);
             expect(fs.existsSync(path.join(encryptedDir, 'subdir'))).toBe(true);
-            expect(fs.existsSync(path.join(encryptedDir, 'subdir', 'file2.txt.encrypted'))).toBe(false);
+            expect(fs.existsSync(path.join(encryptedDir, 'subdir', 'file2.txt'))).toBe(false);
 
             // 清理
             await fs.promises.rm(sourceDir, { recursive: true, force: true });
             await fs.promises.rm(encryptedDir, { recursive: true, force: true });
+        });
+    });
+
+    describe('Delete Source', () => {
+        test('should delete a file only after successful encryption and decryption', async () => {
+            const testFile = path.join(testDir, 'delete-source.txt');
+            const encryptedFile = testFile + '.encrypted';
+            await fs.promises.writeFile(testFile, 'Delete source content');
+
+            await encryptCLI(testFile, testKey, { deleteSource: true });
+            expect(fs.existsSync(testFile)).toBe(false);
+            expect(fs.existsSync(encryptedFile)).toBe(true);
+
+            await decryptCLI(encryptedFile, testKey, { deleteSource: true });
+            expect(fs.existsSync(encryptedFile)).toBe(false);
+            expect(await fs.promises.readFile(testFile, 'utf8')).toBe('Delete source content');
+
+            await fs.promises.unlink(testFile);
+        });
+
+        test('should delete a directory only after all files are encrypted successfully', async () => {
+            const sourceDir = path.join(testDir, 'delete-source-dir');
+            const encryptedDir = sourceDir + '.encrypted';
+            await fs.promises.mkdir(path.join(sourceDir, 'subdir'), { recursive: true });
+            await fs.promises.writeFile(path.join(sourceDir, 'file.txt'), 'File content');
+            await fs.promises.writeFile(path.join(sourceDir, 'subdir', 'child.txt'), 'Child content');
+
+            await encryptCLI(sourceDir, testKey, { deleteSource: true });
+            expect(fs.existsSync(sourceDir)).toBe(false);
+            expect(fs.existsSync(path.join(encryptedDir, 'file.txt'))).toBe(true);
+            expect(fs.existsSync(path.join(encryptedDir, 'subdir', 'child.txt'))).toBe(true);
+
+            await decryptCLI(encryptedDir, testKey, { deleteSource: true });
+            expect(fs.existsSync(encryptedDir)).toBe(false);
+            expect(await fs.promises.readFile(path.join(sourceDir, 'file.txt'), 'utf8')).toBe('File content');
+            expect(await fs.promises.readFile(path.join(sourceDir, 'subdir', 'child.txt'), 'utf8')).toBe('Child content');
+
+            await fs.promises.rm(sourceDir, { recursive: true, force: true });
+        });
+
+        test('should keep the source file when decryption fails', async () => {
+            const testFile = path.join(testDir, 'keep-on-failure.txt');
+            const encryptedFile = testFile + '.encrypted';
+            await fs.promises.writeFile(testFile, 'Keep source content');
+            await encryptCLI(testFile, testKey, { deleteSource: true });
+
+            await expect(decryptCLI(encryptedFile, 'wrong-key', { deleteSource: true })).rejects.toThrow('解密失败');
+            expect(fs.existsSync(encryptedFile)).toBe(true);
+            expect(fs.existsSync(testFile)).toBe(false);
+
+            await fs.promises.unlink(encryptedFile);
         });
     });
 
@@ -276,12 +326,12 @@ describe('FileEncryptor', () => {
 
             // 用一个密钥加密
             await encryptCLI(testFile, 'correct-key');
+            await fs.promises.unlink(testFile);
 
             // 用不同的密钥解密应该失败
             await expect(decryptCLI(encryptedFile, 'wrong-key')).rejects.toThrow('解密失败');
 
             // 清理
-            await fs.promises.unlink(testFile);
             await fs.promises.unlink(encryptedFile);
         });
 
@@ -430,6 +480,7 @@ describe('FileEncryptor', () => {
             const encryptedFile = testFile + '.encrypted';
 
             // 不指定扩展名解密，应该移除 .encrypted 后缀
+            await fs.promises.unlink(testFile);
             await decryptCLI(encryptedFile, testKey);
             expect(fs.existsSync(testFile + '.decrypted')).toBe(false); // 应该直接还原原文件名
             expect(fs.existsSync(testFile)).toBe(true);

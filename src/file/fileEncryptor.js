@@ -18,39 +18,41 @@ class FileEncryptor {
      * 处理文件或目录
      * @param {string} inputPath - 文件或目录路径
      * @param {string} operation - 'encrypt' 或 'decrypt'
-     * @param {string} [outputPath] - 输出路径（可选）
-     * @param {boolean} [recursive] - 是否递归处理子目录
-     * @param {string} [extension] - 加密文件后缀
+     * @param options
      */
     async process(inputPath, operation, options = {}) {
         inputPath = path.resolve(inputPath);
         const {
             outputPath,
             recursive = true,
-            extension = operation === 'encrypt' ? '.encrypted' : '.decrypted',
-            overwrite = false
+            extension = '.encrypted',
+            overwrite = false,
+            deleteSource = false
         } = options;
 
         try {
             const stats = await fs.promises.stat(inputPath);
+            let output;
 
             if (stats.isFile()) {
                 // 处理单个文件
-                const output = outputPath || this.getOutputPath(inputPath, operation, extension);
+                output = path.resolve(outputPath || this.getOutputPath(inputPath, operation, extension));
+                this.validateDeleteSourcePath(inputPath, output, deleteSource, false);
                 await this.processFile(inputPath, output, operation, overwrite);
-                if (!this.unableAuthenticateData) {
-                    console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}完成: ${inputPath} -> ${output}`);
-                }
             } else if (stats.isDirectory()) {
                 // 处理目录
-                const outputDir = outputPath || this.getOutputPath(inputPath, operation, extension);
-                await this.processDirectory(inputPath, outputDir, operation, { recursive, extension, overwrite });
-                if (!this.unableAuthenticateData) {
-                    console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}目录完成: ${inputPath} -> ${outputDir}`);
-                }
+                output = path.resolve(outputPath || this.getOutputPath(inputPath, operation, extension));
+                this.validateDeleteSourcePath(inputPath, output, deleteSource, true);
+                await this.processDirectory(inputPath, output, operation, { recursive, overwrite });
             } else {
                 throw new Error('输入路径必须是文件或目录');
             }
+
+            if (deleteSource) {
+                await fs.promises.rm(inputPath, { recursive: stats.isDirectory() });
+            }
+
+            console.log(`${operation === 'encrypt' ? '🔒 加密' : '🔓 解密'}${stats.isDirectory() ? '目录' : ''}完成: ${inputPath} -> ${output}`);
         } catch (error) {
             throw new Error(`处理失败: ${error.message}`);
         }
@@ -88,7 +90,7 @@ class FileEncryptor {
      * 处理目录
      */
     async processDirectory(inputDir, outputDir, operation, options) {
-        const { recursive = true, extension, overwrite = false } = options;
+        const { recursive = true, overwrite = false } = options;
 
         // 确保输出目录存在
         await fs.promises.mkdir(outputDir, { recursive: true });
@@ -101,21 +103,31 @@ class FileEncryptor {
             const sourcePath = path.join(inputDir, item.name);
             const targetPath = path.join(outputDir, item.name);
 
-            try {
-                if (item.isFile()) {
-                    // 处理文件
-                    const fileOutputPath = this.getOutputPath(targetPath, operation, extension);
-                    await this.processFile(sourcePath, fileOutputPath, operation, overwrite);
-                } else if (item.isDirectory() && recursive) {
-                    // 递归处理子目录
-                    await this.processDirectory(sourcePath, targetPath, operation, options);
-                } else if (item.isDirectory() && !recursive) {
-                    // 不递归处理，只复制目录结构
-                    await fs.promises.mkdir(targetPath, { recursive: true });
-                }
-            } catch (error) {
-                console.warn(`跳过 ${sourcePath}: ${error.message}`);
+            if (item.isFile()) {
+                // 目录加解密只修改根目录名称，内部文件名保持不变
+                await this.processFile(sourcePath, targetPath, operation, overwrite);
+            } else if (item.isDirectory() && recursive) {
+                // 递归处理子目录
+                await this.processDirectory(sourcePath, targetPath, operation, options);
+            } else if (item.isDirectory() && !recursive) {
+                // 不递归处理，只复制目录结构
+                await fs.promises.mkdir(targetPath, { recursive: true });
             }
+        }
+    }
+
+    /**
+     * 删除源路径前验证输出路径安全性
+     */
+    validateDeleteSourcePath(inputPath, outputPath, deleteSource, isDirectory) {
+        if (!deleteSource) return;
+
+        const relativePath = path.relative(inputPath, outputPath);
+        const isSamePath = relativePath === '';
+        const isInsideInput = isDirectory && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
+
+        if (isSamePath || isInsideInput) {
+            throw new Error('删除源路径时，输出路径不能与源路径相同或位于源目录内');
         }
     }
 
@@ -262,7 +274,8 @@ async function encryptCLI(inputPath, key, options = {}) {
         outputPath: options.output,
         recursive: options.recursive,
         extension: options.extension,
-        overwrite: options.overwrite
+        overwrite: options.overwrite,
+        deleteSource: options.deleteSource,
     });
 }
 
@@ -275,7 +288,8 @@ async function decryptCLI(inputPath, key, options = {}) {
         outputPath: options.output,
         recursive: options.recursive,
         extension: options.extension,
-        overwrite: options.overwrite
+        overwrite: options.overwrite,
+        deleteSource: options.deleteSource,
     });
     return encryptor.unableAuthenticateData;
 }
