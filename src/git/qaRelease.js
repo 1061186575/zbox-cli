@@ -77,6 +77,7 @@ async function main(targetBranch, masterBranch = defaultMasterBranch, noMergeMas
     console.timeEnd('总运行耗时');
     console.log('当前时间', new Date().toLocaleString());
     console.log('\x1b[42;30m DONE \x1b[40;32m ' + `发布到 ${targetBranch} 分支成功!` + '\x1b[0m');
+    return true;
 }
 
 
