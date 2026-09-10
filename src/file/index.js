@@ -1,5 +1,5 @@
 const { program } = require('commander');
-const { question } = require("../utils");
+const { secretQuestion } = require("../utils");
 const path = require('path');
 const { readFileSync } = require('fs');
 
@@ -57,7 +57,7 @@ file
         input = path.resolve(input);
         console.log('加密的文件或目录路径: ', input);
         try {
-            const key = await question('加密密钥:')
+            const key = await secretQuestion('加密密钥(输入时不显示): ')
             const outputPath = await require('./fileEncryptor').encryptCLI(input, key, options);
             console.log(`✅ 加密完成: ${outputPath}`);
         } catch (error) {
@@ -78,7 +78,7 @@ file
         input = path.resolve(input);
         console.log('解密的文件或目录路径: ', input);
         try {
-            const key = await question('解密密钥:')
+            const key = await secretQuestion('解密密钥(输入时不显示): ')
             const outputPath = await require('./fileEncryptor').decryptCLI(input, key, options);
             console.log(`✅ 解密完成: ${outputPath}`);
         } catch (error) {
