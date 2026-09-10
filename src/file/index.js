@@ -152,10 +152,18 @@ file
 
 // 计算文件 MD5 值
 file
-    .command('md5 [filePath]')
-    .description('计算文件的 MD5 值，支持超大文件')
-    .action(async (filePath) => {
-        await require('../command/md5').fileMd5(filePath);
+    .command('md5 <filePaths...>')
+    .description('计算一个或多个文件的 MD5 值，支持超大文件')
+    .action(async (filePaths) => {
+        await require('../command/md5').fileMd5(filePaths);
+    })
+
+// 计算文件 SHA-256 值
+file
+    .command('sha256 <filePaths...>')
+    .description('计算一个或多个文件的 SHA-256 值，支持超大文件')
+    .action(async (filePaths) => {
+        await require('./sha256').fileSha256(filePaths);
     })
 
 // 视频合并工具

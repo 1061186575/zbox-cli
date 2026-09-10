@@ -109,4 +109,18 @@ describe('fileMd5', () => {
         // 清理
         fs.unlinkSync(emptyFile);
     });
+
+    test('应该并行计算多个文件的 MD5 值', async () => {
+        const testFile2 = path.join(testDir, 'multiple-md5.txt');
+        const content2 = 'Second MD5 file';
+        fs.writeFileSync(testFile2, content2);
+
+        const result = await fileMd5([testFile, testFile2]);
+
+        expect(result).toEqual([
+            '8268a33584ba20b63d65a331507a888d',
+            require('crypto').createHash('md5').update(content2).digest('hex')
+        ]);
+        fs.unlinkSync(testFile2);
+    });
 });

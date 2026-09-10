@@ -120,13 +120,20 @@ function calculateFileMd5(filePath) {
  * MD5 命令主函数
  * @param {string} filePath - 可选的文件路径参数
  */
-async function fileMd5(filePath) {
-    try {
-        if (!filePath) {
-            console.log('❌ 文件路径不能为空');
-            return;
-        }
+async function fileMd5(filePathOrPaths) {
+    const filePaths = Array.isArray(filePathOrPaths) ? filePathOrPaths : [filePathOrPaths];
 
+    if (filePaths.length === 0 || !filePaths[0]) {
+        console.log('❌ 文件路径不能为空');
+        return;
+    }
+
+    const hashes = await Promise.all(filePaths.map(filePath => fileMd5Single(filePath)));
+    return Array.isArray(filePathOrPaths) ? hashes : hashes[0];
+}
+
+async function fileMd5Single(filePath) {
+    try {
         // 支持相对路径和绝对路径
         const resolvedPath = path.resolve(filePath);
 
