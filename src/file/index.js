@@ -14,21 +14,6 @@ file
     .option('-c, --concurrency <count>', '最大并发处理个数', '10')
     .action((input, options) => require('./repairMediaTime')(input, options));
 
-// 文件异或加解密工具
-file
-    .command('xor')
-    .description('xor, 使用循环异或密钥对文件或目录进行简单加解密（重复执行即可还原）')
-    .argument('<input>', '要处理的文件或目录路径')
-    .option('-k, --key <key>', '异或密钥(不安全, 很可能被逆向出密钥, 只是简单混淆不是加密)')
-    .option('-o, --output <path>', '输出路径（默认原地处理）')
-    .option('--no-recursive', '不递归处理子目录')
-    .option('--overwrite', '覆盖已存在的输出文件')
-    .action(async (input, options) => {
-        const inputPath = path.resolve(input);
-        const outputFiles = await require('./xor').xor(inputPath, options.key, options);
-        console.log(`✅ 异或处理完成，共处理 ${outputFiles.length} 个文件`);
-    });
-
 // 文件随机重命名工具
 file
     .command('rr') // randomRename
@@ -86,13 +71,6 @@ file
             process.exitCode = 1;
         }
     });
-
-
-// 用 nodejs 下载 m3u8 文件
-file
-    .command('nodejsDownloadM3u8')
-    .description('用 nodejs 下载 m3u8 文件')
-    .action(require('./nodejsDownloadM3u8'))
 
 
 // 用 ffmpeg 下载 m3u8 文件
@@ -165,6 +143,27 @@ file
     .action(async (filePaths) => {
         await require('./sha256').fileSha256(filePaths);
     })
+
+// 文件异或加解密工具
+// file
+//     .command('xor')
+//     .description('xor, 使用循环异或密钥对文件或目录进行简单加解密（重复执行即可还原）')
+//     .argument('<input>', '要处理的文件或目录路径')
+//     .option('-k, --key <key>', '异或密钥(不安全, 很可能被逆向出密钥, 只是简单混淆不是加密)')
+//     .option('-o, --output <path>', '输出路径（默认原地处理）')
+//     .option('--no-recursive', '不递归处理子目录')
+//     .option('--overwrite', '覆盖已存在的输出文件')
+//     .action(async (input, options) => {
+//         const inputPath = path.resolve(input);
+//         const outputFiles = await require('./xor').xor(inputPath, options.key, options);
+//         console.log(`✅ 异或处理完成，共处理 ${outputFiles.length} 个文件`);
+//     });
+
+// 用 nodejs 下载 m3u8 文件
+// file
+//     .command('nodejsDownloadM3u8')
+//     .description('用 nodejs 下载 m3u8 文件')
+//     .action(require('./nodejsDownloadM3u8'))
 
 // 视频合并工具
 file
