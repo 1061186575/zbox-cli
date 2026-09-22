@@ -344,6 +344,7 @@ async function main(options = {}) {
         await Promise.all(projects.map(({ projectPath }) => fetchBranch(projectPath, sourceBranch)));
     }
 
+    const openUrlList = [];
     for (const { item, projectPath } of projects) {
         warnings.push(...getProjectWarnings(projectPath, sourceBranch));
 
@@ -360,7 +361,7 @@ async function main(options = {}) {
         const url = getUrl(sourceBranch, title || firstCommitMsg, item, gitlabUrl);
         console.log(projectPath, url, '\n');
         if (options.open) {
-            openUrl(url);
+            openUrlList.push(url);
         }
         findOne = true;
     }
@@ -369,7 +370,16 @@ async function main(options = {}) {
         console.log(`${projectList.map(item => item.name).join('、')} 项目没有找到 ${sourceBranch} 分支`);
     }
 
-    printWarnings(warnings);
+    // 如果有错误就先显示错误，然后再打开页面
+    if (warnings.length) {
+        printWarnings(warnings);
+        console.log('3 秒后自动打开 Merge Request 页面');
+        setTimeout(() => {
+            openUrlList.forEach(openUrl);
+        }, 3000);
+    } else {
+        openUrlList.forEach(openUrl);
+    }
 }
 
 module.exports = main;
