@@ -76,7 +76,9 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
                     return;
                 }
 
-                // ctx.type = 'text';
+                ctx.type = path.extname(filePath) || 'application/octet-stream';
+                ctx.set('Content-Disposition', 'inline');
+                ctx.length = stat.size;
                 ctx.body = fs.createReadStream(filePath);
                 return;
             }
