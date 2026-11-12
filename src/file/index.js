@@ -159,12 +159,6 @@ file
 //         console.log(`✅ 异或处理完成，共处理 ${outputFiles.length} 个文件`);
 //     });
 
-// 用 nodejs 下载 m3u8 文件
-// file
-//     .command('nodejsDownloadM3u8')
-//     .description('用 nodejs 下载 m3u8 文件')
-//     .action(require('./nodejsDownloadM3u8'))
-
 // 视频合并工具
 file
     .command('videoMerge')

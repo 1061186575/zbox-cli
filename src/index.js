@@ -6,5 +6,4 @@ require('./git');
 require('./net');
 require('./crypto');
 require('./file');
-require('./ke');
 require('./local');
