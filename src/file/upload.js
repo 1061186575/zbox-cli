@@ -35,13 +35,14 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
                 return;
             }
 
-            if (ctx.method === 'GET' && ctx.path === '/files') {
-                if (!allowDownload) {
-                    ctx.status = 403;
-                    ctx.body = { error: 'Download is disabled' };
-                    return;
-                }
+            // 允许下载才能访问下面的接口
+            if (!allowDownload) {
+                ctx.status = 403;
+                ctx.body = { error: 'Download is disabled' };
+                return;
+            }
 
+            if (ctx.method === 'GET' && ctx.path === '/files') {
                 const currentPath = normalizeRelativePath(ctx.query.path || '');
                 const files = getFileList(uploadDir, currentPath);
                 ctx.body = {
@@ -53,12 +54,6 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
             }
 
             if (ctx.method === 'GET' && ctx.path === '/download') {
-                if (!allowDownload) {
-                    ctx.status = 403;
-                    ctx.body = { error: 'Download is disabled' };
-                    return;
-                }
-
                 const filePath = resolveUploadPath(uploadDir, ctx.query.path || '');
                 const stat = fs.statSync(filePath);
                 if (stat.isDirectory()) {
@@ -73,12 +68,6 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
             }
 
             if (ctx.method === 'GET' && ctx.path === '/view') {
-                if (!allowDownload) {
-                    ctx.status = 403;
-                    ctx.body = { error: 'Download is disabled' };
-                    return;
-                }
-
                 const filePath = resolveUploadPath(uploadDir, ctx.query.path || '');
                 const stat = fs.statSync(filePath);
                 if (stat.isDirectory()) {
@@ -87,13 +76,7 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
                     return;
                 }
 
-                if (!isTextFile(filePath)) {
-                    ctx.status = 400;
-                    ctx.body = { error: 'Only text files can be viewed' };
-                    return;
-                }
-
-                ctx.type = 'text';
+                // ctx.type = 'text';
                 ctx.body = fs.createReadStream(filePath);
                 return;
             }

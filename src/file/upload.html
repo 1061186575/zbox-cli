@@ -374,6 +374,7 @@
                         <div class="file-details">${details}</div>
                     </div>
                     <div class="file-actions">
+                        ${file.type !== 'directory' ? `<button type="button" class="file-action-btn" onclick="event.stopPropagation(); openFile('${encodedPath}')">open</button>` : ''}
                         ${file.type !== 'directory' ? `<button type="button" class="file-action-btn" onclick="event.stopPropagation(); downloadFile('${encodedPath}')">下载</button>` : ''}
                     </div>
                 </div>
@@ -410,6 +411,9 @@
         document.getElementById('textModalContent').value = '';
     }
 
+    function openFile(encodedPath) {
+        window.open(`/view?path=${encodedPath}`);
+    }
     function downloadFile(encodedPath) {
         window.location.href = `/download?path=${encodedPath}`;
     }

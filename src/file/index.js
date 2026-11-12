@@ -116,7 +116,7 @@ file
     .option('-d, --dir <directory>', '指定文件保存目录', process.cwd())
     .option('--maxFileSize <size>', '单个文件最大大小 (GB)', '10')
     .option('--maxTotalFileSize <size>', '总文件最大大小 (GB)', '20')
-    .option('--allowDownload', '允许下载文件', false)
+    .option('-a,--allowDownload', '显示保存目录的文件列表, 并且允许下载文件', false)
     .action(options => {
         const uploadServer = require('./upload')
         uploadServer(
