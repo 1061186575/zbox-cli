@@ -76,10 +76,10 @@ async function main(options) {
         }
 
         if (exifGroup) {
-            await classifyFiles(files.filter(d => d.shootingTimeMs !== 0), SUB_DIR_NAME);
+            await classifyFiles(files.filter(d => d.shootingTimeMs !== 0), SUB_DIR_NAME, true);
             await classifyFiles(files.filter(d => d.shootingTimeMs === 0), `${SUB_DIR_NAME}_没有拍摄时间`);
         } else {
-            await classifyFiles(files, SUB_DIR_NAME);
+            await classifyFiles(files, SUB_DIR_NAME, sort === 'exif');
         }
 
         console.log('文件分类完成！');
@@ -167,7 +167,7 @@ async function getAllFiles(dirPath, recursive, allFiles = []) {
     return allFiles;
 }
 
-async function classifyFiles(files, SUB_DIR_NAME) {
+async function classifyFiles(files, SUB_DIR_NAME, appendShootingMonth = false) {
     let currentDirIndex = 1;
     let currentBatch = {
         files: [],
@@ -183,7 +183,7 @@ async function classifyFiles(files, SUB_DIR_NAME) {
             (currentBatch.totalSize + file.size) > MAX_TOTAL_SIZE_GB * 1024 * 1024 * 1024) {
 
             // 创建当前批次的目录并复制文件
-            await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME);
+            await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME, appendShootingMonth);
 
             // 重置批次并增加目录索引
             currentBatch = {
@@ -207,12 +207,19 @@ async function classifyFiles(files, SUB_DIR_NAME) {
 
     // 处理最后一批文件
     if (currentBatch.fileCount > 0) {
-        await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME);
+        await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME, appendShootingMonth);
     }
 }
 
-async function createAndCopyBatch(batch, dirIndex, SUB_DIR_NAME) {
-    const dirName = `${SUB_DIR_NAME}${dirIndex}`;
+async function createAndCopyBatch(batch, dirIndex, SUB_DIR_NAME, appendShootingMonth) {
+    let dirName = `${SUB_DIR_NAME}${dirIndex}`;
+    const firstFile = batch.files[0];
+    if (appendShootingMonth && firstFile && Number.isFinite(firstFile.shootingTimeMs)) {
+        // EXIF 已按时间升序排列，使用当前批次第一张的年月。
+        const date = new Date(firstFile.shootingTimeMs);
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        dirName += `_${date.getFullYear()}-${month}`;
+    }
     const targetDirPath = path.join(TARGET_DIR, dirName);
 
     console.log(`\n创建目录 ${dirName}:`);

@@ -6,7 +6,7 @@ const crypto = program.command('crypto');
 crypto.description('执行文本加解密操作');
 
 // 确定性密码生成器
-// 生成 6 位数的纯数字密码示例: zbox generatePassword --no-uppercase --no-lowercase --no-symbols --length 6
+// 生成 6 位数的纯数字密码示例: zbox crypto generatePassword --no-uppercase --no-lowercase --no-symbols --length 6
 crypto
     .command('generatePassword')
     .description('基于主密码和网站名称生成确定性密码')
@@ -25,7 +25,7 @@ crypto
 
 // 字符串加密工具
 crypto
-    .command('encrypt')
+    .command('en')
     .description('加密字符串')
     .option('-t, --text <text>', '要加密的字符串')
     .option('-k, --key <key>', '加密密钥')
@@ -36,7 +36,7 @@ crypto
             const text = options.text || (await question('请输入要加密的字符串: ')).trim();
             const key = options.key || (await secretQuestion('请输入加密密钥(输入时不显示): ')).trim();
 
-            await encryptStringCLI(text, key, { allowWriteFile: true });
+            return await encryptStringCLI(text, key, { allowWriteFile: true });
         } catch (error) {
             console.error('❌ 加密失败:', error.message);
         }
@@ -45,7 +45,7 @@ crypto
 
 // 字符串解密工具
 crypto
-    .command('decrypt')
+    .command('de')
     .description('解密字符串')
     .option('-t, --text <text>', '要解密的字符串')
     .option('-k, --key <key>', '解密密钥')
@@ -56,7 +56,7 @@ crypto
             const text = options.text || (await question('请输入要解密的字符串: ')).trim();
             const key = options.key || (await secretQuestion('请输入解密密钥(输入时不显示): ')).trim();
 
-            await decryptStringCLI(text, key, { allowWriteFile: true });
+            return await decryptStringCLI(text, key, { allowWriteFile: true });
         } catch (error) {
             console.error('❌ 解密失败:', error.message);
         }
