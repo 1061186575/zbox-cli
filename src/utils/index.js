@@ -1,33 +1,33 @@
-const readline = require("readline");
-const os = require("os");
+const readline = require('readline');
+const os = require('os');
 const fs = require('fs').promises;
 const path = require('path');
-const { spawn, execSync } = require("child_process");
+const { spawn, execSync } = require('child_process');
 
 function question(query) {
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
-    })
+        output: process.stdout,
+    });
     return new Promise(resolve => {
-        rl.question(query, (str) => {
-            resolve(str)
+        rl.question(query, str => {
+            resolve(str);
             rl.close();
-        })
-    })
+        });
+    });
 }
 
 function multilineQuestion(query, endMarker = 'EOF') {
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
     });
     const lines = [];
 
     console.log(`${query} (可输入多行内容，单独输入 ${endMarker} 结束):`);
 
     return new Promise(resolve => {
-        rl.on('line', (line) => {
+        rl.on('line', line => {
             if (line === endMarker) {
                 rl.close();
                 resolve(lines.join('\n'));
@@ -45,7 +45,7 @@ function multilineQuestion(query, endMarker = 'EOF') {
 function secretQuestion(query) {
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
     });
 
     return new Promise(resolve => {
@@ -65,7 +65,7 @@ function secretQuestion(query) {
             // 其他内容（即用户输入的字符）全部忽略，不往屏幕写
         };
 
-        rl.question(query, (answer) => {
+        rl.question(query, answer => {
             rl.close();
             resolve(answer);
         });
@@ -79,7 +79,7 @@ function spawnExec(commandStr, params = [], options = {}) {
             stdio: 'inherit',
             shell: process.platform === 'win32', // Windows 平台使用 shell
             env: process.env, // 继承环境变量
-            cwd: process.cwd() // 默认使用当前工作目录
+            cwd: process.cwd(), // 默认使用当前工作目录
         };
 
         const spawnOptions = { ...defaultOptions, ...options };
@@ -88,7 +88,7 @@ function spawnExec(commandStr, params = [], options = {}) {
             const childProcess = spawn(commandStr, params, spawnOptions);
 
             // 处理错误事件
-            childProcess.on('error', (err) => {
+            childProcess.on('error', err => {
                 reject(new Error(`执行命令失败: ${commandStr} ${params.join(' ')}\n错误: ${err.message}`));
             });
 
@@ -99,7 +99,7 @@ function spawnExec(commandStr, params = [], options = {}) {
                         code,
                         signal,
                         success: true,
-                        command: `${commandStr} ${params.join(' ')}`
+                        command: `${commandStr} ${params.join(' ')}`,
                     });
                 } else {
                     reject(new Error(`命令执行失败: ${commandStr} ${params.join(' ')}\n退出码: ${code}${signal ? `，信号: ${signal}` : ''}`));
@@ -112,7 +112,6 @@ function spawnExec(commandStr, params = [], options = {}) {
                     reject(new Error(`进程被信号终止: ${signal}`));
                 }
             });
-
         } catch (error) {
             reject(new Error(`启动进程失败: ${error.message}`));
         }
@@ -122,7 +121,10 @@ function spawnExec(commandStr, params = [], options = {}) {
 function getIps() {
     try {
         const interfaces = os.networkInterfaces();
-        return Object.values(interfaces).flat().filter(d => d.family === 'IPv4' && d.address !== '127.0.0.1').map(d => d.address)
+        return Object.values(interfaces)
+            .flat()
+            .filter(d => d.family === 'IPv4' && d.address !== '127.0.0.1')
+            .map(d => d.address);
     } catch (e) {
         console.error(`err`, e);
     }
@@ -164,7 +166,7 @@ async function getAllFilePaths(inputPath, recursive = true) {
         if (item.isFile()) {
             filePaths.push(itemPath);
         } else if (item.isDirectory() && recursive) {
-            filePaths.push(...await getAllFilePaths(itemPath, recursive));
+            filePaths.push(...(await getAllFilePaths(itemPath, recursive)));
         }
     }
 
@@ -232,4 +234,4 @@ module.exports = {
     formatDateTime,
     getAllFilePaths,
     copyToClipboard,
-}
+};

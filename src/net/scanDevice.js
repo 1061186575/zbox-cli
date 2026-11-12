@@ -65,9 +65,9 @@ async function startMoreScan(prefixes, ports) {
     }
 
     for (let prefix of prefixes) {
-        let arr = prefix.split('.')
-        arr.pop()
-        prefix = arr.join('.')
+        let arr = prefix.split('.');
+        arr.pop();
+        prefix = arr.join('.');
         for (let i = 1; i <= 254; i++) {
             console.log(`正在扫描网段: ${prefix}.${i}.xx ...`);
 

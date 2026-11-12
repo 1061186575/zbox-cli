@@ -3,24 +3,9 @@ const { ExifTool, ExifDateTime } = require('exiftool-vendored');
 const { TaskController } = require('../utils/taskController');
 const { formatDateTime, getAllFilePaths } = require('../utils');
 
-const mediaExtensions = new Set([
-    '.3gp', '.arw', '.avi', '.avif', '.bmp', '.cr2', '.cr3', '.dng', '.gif',
-    '.heic', '.heif', '.jpeg', '.jpg', '.m2ts', '.m4v', '.mkv', '.mov', '.mp4',
-    '.mpeg', '.mpg', '.mts', '.nef', '.orf', '.png', '.raf', '.raw', '.rw2',
-    '.tif', '.tiff', '.ts', '.webm', '.webp'
-]);
+const mediaExtensions = new Set(['.3gp', '.arw', '.avi', '.avif', '.bmp', '.cr2', '.cr3', '.dng', '.gif', '.heic', '.heif', '.jpeg', '.jpg', '.m2ts', '.m4v', '.mkv', '.mov', '.mp4', '.mpeg', '.mpg', '.mts', '.nef', '.orf', '.png', '.raf', '.raw', '.rw2', '.tif', '.tiff', '.ts', '.webm', '.webp']);
 
-const captureTimeTagNames = [
-    'SubSecDateTimeOriginal',
-    'DateTimeOriginal',
-    'SubSecCreateDate',
-    'CreateDate',
-    'MediaCreateDate',
-    'TrackCreateDate',
-    'CreationDate',
-    'ContentCreateDate',
-    'DateCreated'
-];
+const captureTimeTagNames = ['SubSecDateTimeOriginal', 'DateTimeOriginal', 'SubSecCreateDate', 'CreateDate', 'MediaCreateDate', 'TrackCreateDate', 'CreationDate', 'ContentCreateDate', 'DateCreated'];
 
 function isMediaFile(filePath) {
     return mediaExtensions.has(path.extname(filePath).toLowerCase());
@@ -73,28 +58,32 @@ async function repairMediaFileTime(exiftool, filePath) {
             return {
                 filePath,
                 status: 'skipped',
-                message: '未找到可用的拍摄时间'
+                message: '未找到可用的拍摄时间',
             };
         }
 
-        await exiftool.write(filePath, {
-            FileCreateDate: captureTime.writeValue,
-            FileModifyDate: captureTime.writeValue
-        }, {
-            writeArgs: ['-overwrite_original']
-        });
+        await exiftool.write(
+            filePath,
+            {
+                FileCreateDate: captureTime.writeValue,
+                FileModifyDate: captureTime.writeValue,
+            },
+            {
+                writeArgs: ['-overwrite_original'],
+            }
+        );
 
         return {
             filePath,
             status: 'success',
             captureTime: captureTime.date,
-            tagName: captureTime.tagName
+            tagName: captureTime.tagName,
         };
     } catch (error) {
         return {
             filePath,
             status: 'failed',
-            message: error.message
+            message: error.message,
         };
     }
 }
@@ -133,7 +122,7 @@ async function main(input, options = {}) {
             success: 0,
             skipped: 0,
             failed: 0,
-            results: []
+            results: [],
         };
     }
 
@@ -141,9 +130,7 @@ async function main(input, options = {}) {
     const controller = new TaskController(concurrency);
 
     try {
-        const results = await Promise.all(filePaths.map(filePath => controller.addTask(
-            () => repairMediaFileTime(exiftool, filePath)
-        )));
+        const results = await Promise.all(filePaths.map(filePath => controller.addTask(() => repairMediaFileTime(exiftool, filePath))));
 
         for (const result of results) {
             if (result.status === 'success') {
@@ -155,16 +142,19 @@ async function main(input, options = {}) {
             }
         }
 
-        const summary = results.reduce((result, item) => {
-            result[item.status]++;
-            return result;
-        }, {
-            total: results.length,
-            success: 0,
-            skipped: 0,
-            failed: 0,
-            results
-        });
+        const summary = results.reduce(
+            (result, item) => {
+                result[item.status]++;
+                return result;
+            },
+            {
+                total: results.length,
+                success: 0,
+                skipped: 0,
+                failed: 0,
+                results,
+            }
+        );
 
         console.log(`处理完成：成功 ${summary.success}，跳过 ${summary.skipped}，失败 ${summary.failed}`);
         return summary;

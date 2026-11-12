@@ -3,12 +3,12 @@ const { program } = require('commander');
 // 更新 zbox-cli
 program
     .command('update')
-    .option('-g, --global <global>', '是否全局安装 (true/false)',true)
-    .option('-r, --register <register>', '指定源','https://registry.npmjs.org/')
+    .option('-g, --global <global>', '是否全局安装 (true/false)', true)
+    .option('-r, --register <register>', '指定源', 'https://registry.npmjs.org/')
     .description('更新 zbox-cli')
-    .action((options) => {
-        require('./updateZbox')(options)
-    })
+    .action(options => {
+        require('./updateZbox')(options);
+    });
 
 // 生成二维码
 program
@@ -29,4 +29,4 @@ program
     .option('-l, --length <length>', '输出长度', 32)
     .option('--content <content>', '指定要计算的 md5 字符串')
     .option('--filePath [filePath]', '指定文件路径, 用于计算文件的 MD5 值，支持超大文件, 如果没给参数值会要求输入文件路径')
-    .action(require('./md5').main)
+    .action(require('./md5').main);

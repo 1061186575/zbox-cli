@@ -4,7 +4,7 @@ const readline = require('readline');
 // 创建 readline 接口
 const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
 });
 
 // 获取所有本地分支
@@ -78,4 +78,4 @@ async function main() {
     rl.close();
 }
 
-module.exports = main
+module.exports = main;

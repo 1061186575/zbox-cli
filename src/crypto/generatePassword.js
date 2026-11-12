@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { question, secretQuestion } = require("../utils");
+const { question, secretQuestion } = require('../utils');
 
 /**
  * 确定性安全密码生成器
@@ -11,7 +11,7 @@ const CHAR_SETS = {
     lowercase: 'abcdefghijklmnopqrstuvwxyz',
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     digits: '0123456789',
-    symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+    symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
 };
 
 function generateDeterministicPassword(masterKey, site, options = {}) {
@@ -23,7 +23,7 @@ function generateDeterministicPassword(masterKey, site, options = {}) {
         includeLowercase = true,
         includeDigits = true,
         includeSymbols = true,
-        iterations = 100000 // PBKDF2 迭代次数
+        iterations = 100000, // PBKDF2 迭代次数
     } = options;
 
     // 构建字符集
@@ -107,18 +107,7 @@ function getStrengthLevel(entropy) {
 // 使用 PBKDF2 算法生成，无法逆向推导
 async function main(options = {}) {
     try {
-        const {
-            uppercase = true,
-            lowercase = true,
-            digits = true,
-            symbols = true,
-            showEntropy = false,
-            site = null,
-            masterKey = null,
-            length: lengthStr = '16',
-            username = '',
-            pwdVersion: pwdVersionStr = '1',
-        } = options;
+        const { uppercase = true, lowercase = true, digits = true, symbols = true, showEntropy = false, site = null, masterKey = null, length: lengthStr = '16', username = '', pwdVersion: pwdVersionStr = '1' } = options;
 
         const length = parseInt(lengthStr);
         const pwdVersion = parseInt(pwdVersionStr);
@@ -184,7 +173,7 @@ async function main(options = {}) {
             includeUppercase: uppercase !== false,
             includeLowercase: lowercase !== false,
             includeDigits: digits !== false,
-            includeSymbols: symbols !== false
+            includeSymbols: symbols !== false,
         });
 
         console.log('\n🔐 密码生成完成：', password);
@@ -207,7 +196,7 @@ async function main(options = {}) {
             // console.log(`   熵值: ${entropy.toFixed(1)} bits`);
             // console.log(`   强度等级: ${strength}`);
             if (strength === '非常强') {
-                strengthStr += '✅ '
+                strengthStr += '✅ ';
             }
             strengthStr += `密码强度等级: ${strength}`;
         }
@@ -215,7 +204,6 @@ async function main(options = {}) {
         console.log(`\n${strengthStr}`);
 
         return password;
-
     } catch (error) {
         console.error('❌ 密码生成失败:', error.message);
     }

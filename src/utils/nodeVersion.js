@@ -8,11 +8,7 @@ function parseVersion(version) {
         return null;
     }
 
-    return [
-        Number(matched[1]),
-        Number(matched[2] || 0),
-        Number(matched[3] || 0)
-    ];
+    return [Number(matched[1]), Number(matched[2] || 0), Number(matched[3] || 0)];
 }
 
 function compareVersions(leftVersion, rightVersion) {
@@ -92,5 +88,5 @@ module.exports = {
     compareVersions,
     getMinimumNodeVersion,
     getNodeVersionWarning,
-    warnIfUnsupportedNodeVersion
+    warnIfUnsupportedNodeVersion,
 };

@@ -14,18 +14,13 @@ const StorageType = {
 const fileStoragePath = process.env.ZBOX_TEXT_STORAGE_PATH || path.join(os.tmpdir(), 'zbox-network-text.json');
 
 function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function linkify(text) {
     const urlReg = /(https?:\/\/[^\s<>"']+)/g;
 
-    return escapeHtml(text).replace(urlReg, (url) => {
+    return escapeHtml(text).replace(urlReg, url => {
         const href = url.replace(/&amp;/g, '&');
         return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${url}</a>`;
     });
@@ -36,9 +31,7 @@ function renderList(items) {
         return '<li class="empty">暂无保存内容</li>';
     }
 
-    return items
-        .map((text, index) => `<li><span class="index">${index + 1}</span><p>${linkify(text)}</p><button class="copy-button" type="button" data-index="${index}">复制</button><button class="delete-button" type="button" data-index="${index}">删除</button></li>`)
-        .join('');
+    return items.map((text, index) => `<li><span class="index">${index + 1}</span><p>${linkify(text)}</p><button class="copy-button" type="button" data-index="${index}">复制</button><button class="delete-button" type="button" data-index="${index}">删除</button></li>`).join('');
 }
 
 function normalizeStorage(storage) {
@@ -323,7 +316,7 @@ function readBody(req) {
     return new Promise((resolve, reject) => {
         let body = '';
 
-        req.on('data', (chunk) => {
+        req.on('data', chunk => {
             body += chunk.toString();
 
             if (Buffer.byteLength(body) > textMaxBytes) {

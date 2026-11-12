@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { question } = require("../utils");
+const { question } = require('../utils');
 
 async function main(filePath, options = {}) {
     if (filePath) {
@@ -50,19 +50,18 @@ async function textMd5(options) {
     }
     if (isBase64) {
         logs.push(`转为 base64,`);
-        md5Hash = Buffer.from(md5Hash).toString('base64')
+        md5Hash = Buffer.from(md5Hash).toString('base64');
     }
     if (length < 32) {
         logs.push(`前面 ${length} 位,`);
-        md5Hash = md5Hash.substring(0, length)
+        md5Hash = md5Hash.substring(0, length);
     }
     if (iteration > 1 && isBase64 && length < 32) {
-        logs.unshift('OK!')
+        logs.unshift('OK!');
     }
     console.log(...logs, `MD5 哈希值: ${md5Hash}`);
     return md5Hash;
 }
-
 
 /**
  * 计算文件的 MD5 值，支持大文件流式处理
@@ -93,7 +92,7 @@ function calculateFileMd5(filePath) {
         let processedBytes = 0;
         let lastProgress = 0;
 
-        stream.on('data', (chunk) => {
+        stream.on('data', chunk => {
             hash.update(chunk);
             processedBytes += chunk.length;
 
@@ -110,7 +109,7 @@ function calculateFileMd5(filePath) {
             resolve(md5Hash);
         });
 
-        stream.on('error', (err) => {
+        stream.on('error', err => {
             reject(new Error(`读取文件时发生错误: ${err.message}`));
         });
     });
@@ -147,7 +146,6 @@ async function fileMd5Single(filePath) {
         console.log(`✅ MD5: ${md5Hash}`);
 
         return md5Hash;
-
     } catch (error) {
         console.error(`❌ ${error.message}`);
         throw error;

@@ -17,13 +17,7 @@ class fileEncryptor {
 
     async process(inputPath, operation, options = {}) {
         const resolvedInputPath = path.resolve(inputPath);
-        const {
-            outputPath,
-            recursive = true,
-            extension = '.encrypted',
-            overwrite = false,
-            deleteSource = false
-        } = options;
+        const { outputPath, recursive = true, extension = '.encrypted', overwrite = false, deleteSource = false } = options;
 
         this.validateOperation(operation);
 
@@ -31,14 +25,12 @@ class fileEncryptor {
 
         try {
             const stats = await fs.promises.stat(resolvedInputPath);
-            const resolvedOutputPath = path.resolve(
-                outputPath || this.getOutputPath(resolvedInputPath, operation, extension)
-            );
+            const resolvedOutputPath = path.resolve(outputPath || this.getOutputPath(resolvedInputPath, operation, extension));
 
             await this.validatePaths(resolvedInputPath, resolvedOutputPath, stats, {
                 overwrite,
                 deleteSource,
-                recursive
+                recursive,
             });
 
             temporaryOutputPath = this.getTemporaryPath(resolvedOutputPath, 'processing');
@@ -136,10 +128,7 @@ class fileEncryptor {
 
     getTemporaryPath(outputPath, type) {
         const randomValue = crypto.randomBytes(8).toString('hex');
-        return path.join(
-            path.dirname(outputPath),
-            `.${path.basename(outputPath)}.${process.pid}.${randomValue}.${type}`
-        );
+        return path.join(path.dirname(outputPath), `.${path.basename(outputPath)}.${process.pid}.${randomValue}.${type}`);
     }
 
     async replaceOutput(temporaryOutputPath, outputPath, overwrite) {
@@ -182,9 +171,7 @@ class fileEncryptor {
 
     async processSmallFile(inputFile, outputFile, operation) {
         const inputData = await fs.promises.readFile(inputFile);
-        const outputData = operation === 'encrypt'
-            ? await this.encryptBuffer(inputData)
-            : await this.decryptBuffer(inputData);
+        const outputData = operation === 'encrypt' ? await this.encryptBuffer(inputData) : await this.decryptBuffer(inputData);
         await fs.promises.writeFile(outputFile, outputData);
     }
 
@@ -246,13 +233,7 @@ class fileEncryptor {
         const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
         const tag = cipher.getAuthTag();
 
-        return Buffer.concat([
-            Buffer.from([this.saltLength]),
-            salt,
-            iv,
-            tag,
-            encrypted
-        ]);
+        return Buffer.concat([Buffer.from([this.saltLength]), salt, iv, tag, encrypted]);
     }
 
     async decryptBuffer(ciphertext) {
@@ -290,7 +271,7 @@ class fileEncryptor {
             salt,
             iv,
             tag,
-            encrypted: ciphertext.subarray(offset)
+            encrypted: ciphertext.subarray(offset),
         };
     }
 
@@ -299,19 +280,10 @@ class fileEncryptor {
         const iv = crypto.randomBytes(this.ivLength);
         const derivedKey = await this.deriveKey(salt);
         const cipher = crypto.createCipheriv(this.algorithm, derivedKey, iv);
-        const header = Buffer.concat([
-            Buffer.from([this.saltLength]),
-            salt,
-            iv,
-            Buffer.alloc(this.tagLength)
-        ]);
+        const header = Buffer.concat([Buffer.from([this.saltLength]), salt, iv, Buffer.alloc(this.tagLength)]);
 
         await fs.promises.writeFile(outputFile, header);
-        await pipeline(
-            fs.createReadStream(inputFile),
-            cipher,
-            fs.createWriteStream(outputFile, { flags: 'a' })
-        );
+        await pipeline(fs.createReadStream(inputFile), cipher, fs.createWriteStream(outputFile, { flags: 'a' }));
 
         const fileHandle = await fs.promises.open(outputFile, 'r+');
         try {
@@ -328,11 +300,7 @@ class fileEncryptor {
         decipher.setAuthTag(tag);
 
         try {
-            await pipeline(
-                fs.createReadStream(inputFile, { start: this.headerLength }),
-                decipher,
-                fs.createWriteStream(outputFile)
-            );
+            await pipeline(fs.createReadStream(inputFile, { start: this.headerLength }), decipher, fs.createWriteStream(outputFile));
         } catch (error) {
             throw new Error(`解密失败: ${error.message}`);
         }
@@ -408,7 +376,7 @@ async function encryptCLI(inputPath, key, options = {}) {
         recursive: options.recursive,
         extension: options.extension,
         overwrite: options.overwrite,
-        deleteSource: options.deleteSource
+        deleteSource: options.deleteSource,
     });
 }
 
@@ -419,7 +387,7 @@ async function decryptCLI(inputPath, key, options = {}) {
         recursive: options.recursive,
         extension: options.extension,
         overwrite: options.overwrite,
-        deleteSource: options.deleteSource
+        deleteSource: options.deleteSource,
     });
 }
 
@@ -427,5 +395,5 @@ module.exports = {
     encryptCLI,
     decryptCLI,
     isEncryptedFile: fileEncryptor.isEncryptedFile,
-    SMALL_FILE_MAX_SIZE
+    SMALL_FILE_MAX_SIZE,
 };

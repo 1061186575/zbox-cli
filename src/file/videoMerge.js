@@ -90,7 +90,6 @@ async function videoMerge(options) {
             const outputStats = fs.statSync(outputPath);
             const outputSize = formatFileSize(outputStats.size);
             console.log(`📊 合并后文件大小: ${outputSize}`);
-
         } finally {
             // 清理临时文件
             if (fs.existsSync(fileListPath)) {
@@ -101,7 +100,6 @@ async function videoMerge(options) {
                 }
             }
         }
-
     } catch (error) {
         console.error('❌ 视频合并失败:', error.message);
         process.exit(1);
@@ -135,7 +133,7 @@ function getVideoFiles(dirPath, sortBy) {
             size: stats.size,
             sizeStr: formatFileSize(stats.size),
             ctime: stats.ctime,
-            mtime: stats.mtime
+            mtime: stats.mtime,
         });
     }
 
@@ -195,12 +193,16 @@ function createFileList(videoFiles) {
  */
 async function mergeVideos(ffmpegPath, fileListPath, outputPath) {
     const args = [
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', fileListPath,
-        '-c', 'copy',
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        fileListPath,
+        '-c',
+        'copy',
         '-y', // 覆盖输出文件
-        outputPath
+        outputPath,
     ];
 
     console.log('🎬 执行 FFmpeg 命令...');

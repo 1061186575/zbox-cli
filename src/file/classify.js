@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { existsSync } = require('fs');
-const { question } = require("../utils");
+const { question } = require('../utils');
 
 /**
  * 文件分类, 方便上传备份等
@@ -29,12 +29,12 @@ async function main(options) {
         MAX_FILE_COUNT = parseFloat(options.MAX_FILE_COUNT) || MAX_FILE_COUNT;
         MAX_TOTAL_SIZE_GB = parseFloat(options.MAX_TOTAL_SIZE_GB) || MAX_TOTAL_SIZE_GB;
 
-        console.log('SOURCE_DIR', SOURCE_DIR)
-        console.log('TARGET_DIR', TARGET_DIR)
-        console.log('递归处理子目录:', recursive)
-        console.log('排序方式:', sort)
+        console.log('SOURCE_DIR', SOURCE_DIR);
+        console.log('TARGET_DIR', TARGET_DIR);
+        console.log('递归处理子目录:', recursive);
+        console.log('排序方式:', sort);
         if (sort === 'exif') {
-            console.log('没有拍摄时间的文件单独分组:', exifGroup)
+            console.log('没有拍摄时间的文件单独分组:', exifGroup);
         }
 
         if ((await question('请确认以上信息, 是否继续?(y/N) ')).trim() !== 'y') {
@@ -60,7 +60,7 @@ async function main(options) {
 
         if (sort === 'exif') {
             // 按拍摄时间从旧到新排序
-            await addShootingTime(files, exifGroup)
+            await addShootingTime(files, exifGroup);
             files.sort((a, b) => a.shootingTimeMs - b.shootingTimeMs);
         } else if (sort === 'mtime') {
             files.sort((a, b) => a.mtimeMs - b.mtimeMs);
@@ -71,13 +71,20 @@ async function main(options) {
         } else if (sort === 'name') {
             files.sort((a, b) => a.name.localeCompare(b.name));
         } else {
-            console.error('sort 错误')
+            console.error('sort 错误');
             return;
         }
 
         if (exifGroup) {
-            await classifyFiles(files.filter(d => d.shootingTimeMs !== 0), SUB_DIR_NAME, true);
-            await classifyFiles(files.filter(d => d.shootingTimeMs === 0), `${SUB_DIR_NAME}_没有拍摄时间`);
+            await classifyFiles(
+                files.filter(d => d.shootingTimeMs !== 0),
+                SUB_DIR_NAME,
+                true
+            );
+            await classifyFiles(
+                files.filter(d => d.shootingTimeMs === 0),
+                `${SUB_DIR_NAME}_没有拍摄时间`
+            );
         } else {
             await classifyFiles(files, SUB_DIR_NAME, sort === 'exif');
         }
@@ -90,7 +97,7 @@ async function main(options) {
 
 // 遍历读取每个文件的拍摄时间
 async function addShootingTime(files, exifGroup = false) {
-    const { ExifTool } = require("exiftool-vendored");
+    const { ExifTool } = require('exiftool-vendored');
     const exiftool = new ExifTool();
 
     try {
@@ -132,7 +139,6 @@ async function addShootingTime(files, exifGroup = false) {
         }
 
         return files;
-
     } finally {
         // 务必关闭 exiftool 的后台进程，防止内存泄漏
         await exiftool.end();
@@ -172,16 +178,14 @@ async function classifyFiles(files, SUB_DIR_NAME, appendShootingMonth = false) {
     let currentBatch = {
         files: [],
         totalSize: 0,
-        fileCount: 0
+        fileCount: 0,
     };
 
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
         // 检查是否达到限制条件
-        if (currentBatch.fileCount >= MAX_FILE_COUNT ||
-            (currentBatch.totalSize + file.size) > MAX_TOTAL_SIZE_GB * 1024 * 1024 * 1024) {
-
+        if (currentBatch.fileCount >= MAX_FILE_COUNT || currentBatch.totalSize + file.size > MAX_TOTAL_SIZE_GB * 1024 * 1024 * 1024) {
             // 创建当前批次的目录并复制文件
             await createAndCopyBatch(currentBatch, currentDirIndex, SUB_DIR_NAME, appendShootingMonth);
 
@@ -189,7 +193,7 @@ async function classifyFiles(files, SUB_DIR_NAME, appendShootingMonth = false) {
             currentBatch = {
                 files: [],
                 totalSize: 0,
-                fileCount: 0
+                fileCount: 0,
             };
             currentDirIndex++;
         }
@@ -248,7 +252,7 @@ async function createAndCopyBatch(batch, dirIndex, SUB_DIR_NAME, appendShootingM
             if (isCopy) {
                 await fs.copyFile(file.path, finalTargetPath);
             } else {
-                await fs.rename(file.path, finalTargetPath, (err) => {
+                await fs.rename(file.path, finalTargetPath, err => {
                     if (err) console.log('err', err);
                 });
             }

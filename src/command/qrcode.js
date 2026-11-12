@@ -18,7 +18,7 @@ async function main(options = {}) {
 
     if (output) {
         await QRCode.toFile(output, text, {
-            errorCorrectionLevel: 'M'
+            errorCorrectionLevel: 'M',
         });
         console.log(`二维码已保存到: ${output}`);
         return output;
@@ -27,7 +27,7 @@ async function main(options = {}) {
     const qrcode = await QRCode.toString(text, {
         type: 'terminal',
         small: true,
-        errorCorrectionLevel: 'M'
+        errorCorrectionLevel: 'M',
     });
 
     console.log();

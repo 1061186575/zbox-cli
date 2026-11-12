@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { copyToClipboard } = require("../utils");
+const { copyToClipboard } = require('../utils');
 
 class StringEncryptor {
     constructor(key) {
@@ -30,10 +30,7 @@ class StringEncryptor {
         const cipher = crypto.createCipheriv(this.algorithm, derivedKey, iv);
 
         // 加密数据
-        const encrypted = Buffer.concat([
-            cipher.update(Buffer.from(plaintext, 'utf8')),
-            cipher.final()
-        ]);
+        const encrypted = Buffer.concat([cipher.update(Buffer.from(plaintext, 'utf8')), cipher.final()]);
 
         // 获取认证标签
         const tag = cipher.getAuthTag();
@@ -80,10 +77,7 @@ class StringEncryptor {
             decipher.setAuthTag(tag);
 
             // 解密数据
-            const decrypted = Buffer.concat([
-                decipher.update(encrypted),
-                decipher.final()
-            ]);
+            const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
 
             return decrypted.toString('utf8');
         } catch (error) {
@@ -106,7 +100,6 @@ class StringEncryptor {
         }
     }
 }
-
 
 // ==================== CLI 接口函数 ====================
 
@@ -195,5 +188,5 @@ module.exports = {
     StringEncryptor,
     encryptStringCLI,
     decryptStringCLI,
-    isValidEncryptedString: StringEncryptor.isValidEncryptedString
+    isValidEncryptedString: StringEncryptor.isValidEncryptedString,
 };

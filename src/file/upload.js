@@ -2,7 +2,7 @@ const Koa = require('koa');
 const path = require('path');
 const fs = require('fs');
 const formidable = require('formidable');
-const { getIps } = require("../utils");
+const { getIps } = require('../utils');
 
 async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFileSize = 10, maxTotalFileSize = 20, allowDownload = false) {
     uploadDir = path.resolve(uploadDir);
@@ -13,7 +13,7 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
 
     const app = new Koa();
 
-    app.use(async (ctx) => {
+    app.use(async ctx => {
         ctx.set('Access-Control-Allow-Origin', '*');
         ctx.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         ctx.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -48,7 +48,7 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
                 ctx.body = {
                     uploadDir,
                     currentPath,
-                    files: files
+                    files: files,
                 };
                 return;
             }
@@ -96,7 +96,7 @@ async function createUploadServer(port = 3000, uploadDir = process.cwd(), maxFil
         console.log(`Address: http://localhost:${port}`);
         getIps().map(ip => {
             console.log(`Address: http://${ip}:${port}`);
-        })
+        });
         console.log(`Upload directory: ${uploadDir}`);
     });
 
@@ -139,7 +139,7 @@ async function handleFileUpload(req, uploadDir, maxFileSize = 10, maxTotalFileSi
                 uploadedFiles.push({
                     originalName: originalName,
                     savedPath: finalPath,
-                    size: file.size
+                    size: file.size,
                 });
             }
         });
@@ -149,7 +149,7 @@ async function handleFileUpload(req, uploadDir, maxFileSize = 10, maxTotalFileSi
         return {
             success: true,
             message: `Successfully uploaded ${uploadedFiles.length} file(s)`,
-            files: uploadedFiles
+            files: uploadedFiles,
         };
     } catch (error) {
         console.error('Upload failed:', error);
@@ -228,7 +228,7 @@ function getFileList(dir, relativePath = '') {
                 path: toWebPath(itemPath),
                 isText: isTextFile(fullPath),
                 size: stat.size,
-                modified: stat.mtime
+                modified: stat.mtime,
             });
         }
     });
@@ -265,20 +265,14 @@ function toWebPath(filePath) {
 }
 
 function isTextFile(filePath) {
-    const textExtensions = new Set([
-        '.txt', '.md', '.json', '.js', '.jsx', '.ts', '.tsx', '.css', '.html', '.htm',
-        '.xml', '.csv', '.log', '.yml', '.yaml', '.ini', '.conf', '.config', '.env',
-        '.gitignore', '.npmrc', '.prettierrc', '.eslintrc'
-    ]);
+    const textExtensions = new Set(['.txt', '.md', '.json', '.js', '.jsx', '.ts', '.tsx', '.css', '.html', '.htm', '.xml', '.csv', '.log', '.yml', '.yaml', '.ini', '.conf', '.config', '.env', '.gitignore', '.npmrc', '.prettierrc', '.eslintrc']);
     const ext = path.extname(filePath).toLowerCase();
 
     return textExtensions.has(ext) || textExtensions.has(path.basename(filePath).toLowerCase());
 }
 
 function getUploadHTML(allowDownload) {
-    return fs
-        .readFileSync(path.join(__dirname, 'upload.html'), 'utf8')
-        .replace('__ALLOW_DOWNLOAD__', JSON.stringify(Boolean(allowDownload)));
+    return fs.readFileSync(path.join(__dirname, 'upload.html'), 'utf8').replace('__ALLOW_DOWNLOAD__', JSON.stringify(Boolean(allowDownload)));
 }
 
 module.exports = createUploadServer;

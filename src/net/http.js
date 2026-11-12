@@ -1,8 +1,7 @@
 const http = require('http');
-const { getIps } = require("../utils");
+const { getIps } = require('../utils');
 
 function main(port = 80) {
-
     const server = http.createServer((req, res) => {
         // 设置响应头
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -34,7 +33,7 @@ function main(port = 80) {
             return;
         }
 
-        const sendResponse = (content) => {
+        const sendResponse = content => {
             res.writeHead(200);
             try {
                 res.end(JSON.stringify(JSON.parse(content), null, 2));
@@ -59,17 +58,16 @@ function main(port = 80) {
                 method: 'GET',
                 url: req.url,
                 headers: headers,
-                queryParams: req.query
+                queryParams: req.query,
             };
 
             res.writeHead(200);
             res.end(JSON.stringify(response, null, 2));
-
         } else if (req.method === 'POST') {
             // POST 请求：返回请求头 + 请求体
             let body = '';
 
-            req.on('data', (chunk) => {
+            req.on('data', chunk => {
                 body += chunk.toString();
             });
 
@@ -83,12 +81,7 @@ function main(port = 80) {
                     parsedBody = body;
                 }
 
-                if (
-                    parsedBody &&
-                    typeof parsedBody === 'object' &&
-                    !Array.isArray(parsedBody) &&
-                    parsedBody.response
-                ) {
+                if (parsedBody && typeof parsedBody === 'object' && !Array.isArray(parsedBody) && parsedBody.response) {
                     sendResponse(String(parsedBody.response));
                     return;
                 }
@@ -97,20 +90,19 @@ function main(port = 80) {
                     method: 'POST',
                     url: req.url,
                     headers: headers,
-                    body: parsedBody
+                    body: parsedBody,
                 };
 
                 res.writeHead(200);
                 res.end(JSON.stringify(response, null, 2));
             });
-
         } else {
             // 其他请求方法
             const response = {
                 method: req.method,
                 url: req.url,
                 headers: headers,
-                message: `Method ${req.method} not specifically handled, but request received`
+                message: `Method ${req.method} not specifically handled, but request received`,
             };
 
             res.writeHead(200);
@@ -123,9 +115,8 @@ function main(port = 80) {
         console.log(`访问地址: http://localhost:${port}`);
         getIps().forEach(ip => {
             console.log(`访问地址: http://${ip}:${port}`);
-        })
+        });
     });
-
 }
 
 module.exports = main;

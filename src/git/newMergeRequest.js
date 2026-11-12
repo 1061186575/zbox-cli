@@ -24,7 +24,7 @@ const configTemplate = `{
             "gitlabUrl": "https://gitlab.com/home"
         }
     ]
-}`
+}`;
 
 function getProjectConfig(configPath) {
     let config = {};
@@ -54,7 +54,7 @@ function getProjectConfig(configPath) {
     }
      */
     config.projectList = Array.isArray(config.projectList) ? config.projectList : [];
-    return config
+    return config;
 }
 
 function findDefaultConfigPath(defaultConfigPath) {
@@ -84,13 +84,9 @@ function getConfigPath(optionsConfigPath, defaultConfigPath) {
 }
 
 function getUrl(sourceBranch, title, item, gitlabUrl) {
-    const {
-        id = '',
-        name,
-        targetBranch = "master",
-    } = item;
+    const { id = '', name, targetBranch = 'master' } = item;
     gitlabUrl = item.gitlabUrl || gitlabUrl;
-    return encodeURI(`${gitlabUrl}/${name}/-/merge_requests/new?merge_request[source_project_id]=${id}&merge_request[source_branch]=${sourceBranch}&merge_request[target_project_id]=${id}&merge_request[target_branch]=${targetBranch}&merge_request[title]=${title}`)
+    return encodeURI(`${gitlabUrl}/${name}/-/merge_requests/new?merge_request[source_project_id]=${id}&merge_request[source_branch]=${sourceBranch}&merge_request[target_project_id]=${id}&merge_request[target_branch]=${targetBranch}&merge_request[title]=${title}`);
 }
 
 function isDirectory(dir) {
@@ -104,7 +100,7 @@ function isDirectory(dir) {
 function hasRef(projectPath, ref) {
     try {
         execFileSync('git', ['-C', projectPath, 'show-ref', '--verify', '--quiet', ref], {
-            stdio: 'ignore'
+            stdio: 'ignore',
         });
         return true;
     } catch (error) {
@@ -127,7 +123,7 @@ function hasBranch(projectPath, branchName) {
 function getProjectCurrentBranch(projectPath) {
     try {
         return execFileSync('git', ['-C', projectPath, 'branch', '--show-current'], {
-            encoding: 'utf8'
+            encoding: 'utf8',
         }).trim();
     } catch (error) {
         return '';
@@ -137,7 +133,7 @@ function getProjectCurrentBranch(projectPath) {
 function getWorkingTreeChanges(projectPath) {
     try {
         return execFileSync('git', ['-C', projectPath, 'status', '--porcelain'], {
-            encoding: 'utf8'
+            encoding: 'utf8',
         }).trim();
     } catch (error) {
         return '';
@@ -145,15 +141,11 @@ function getWorkingTreeChanges(projectPath) {
 }
 
 function getUnpushedCommitCount(projectPath, branchName) {
-    return Number(execFileSync('git', [
-        '-C',
-        projectPath,
-        'rev-list',
-        '--count',
-        `origin/${branchName}..${branchName}`
-    ], {
-        encoding: 'utf8'
-    }).trim());
+    return Number(
+        execFileSync('git', ['-C', projectPath, 'rev-list', '--count', `origin/${branchName}..${branchName}`], {
+            encoding: 'utf8',
+        }).trim()
+    );
 }
 
 function getProjectWarnings(projectPath, branchName) {
@@ -195,14 +187,8 @@ function printWarnings(warnings) {
 
 async function fetchBranch(projectPath, branchName) {
     try {
-        await execFileAsync('git', [
-            '-C',
-            projectPath,
-            'fetch',
-            'origin',
-            `refs/heads/${branchName}:refs/remotes/origin/${branchName}`
-        ], {
-            stdio: 'ignore'
+        await execFileAsync('git', ['-C', projectPath, 'fetch', 'origin', `refs/heads/${branchName}:refs/remotes/origin/${branchName}`], {
+            stdio: 'ignore',
         });
         return true;
     } catch (error) {
@@ -213,7 +199,7 @@ async function fetchBranch(projectPath, branchName) {
 function getBranchRef(projectPath, branchName) {
     try {
         execFileSync('git', ['-C', projectPath, 'show-ref', '--verify', '--quiet', `refs/heads/${branchName}`], {
-            stdio: 'ignore'
+            stdio: 'ignore',
         });
         return branchName;
     } catch (error) {
@@ -236,7 +222,7 @@ function getFirstCommitMsg(projectPath, sourceBranch) {
     const baseBranchRef = getBranchRef(projectPath, 'master');
     const sourceBranchRef = getBranchRef(projectPath, sourceBranch);
     const logOutput = execFileSync('git', ['-C', projectPath, 'log', '--reverse', '--format=%s', `${baseBranchRef}..${sourceBranchRef}`], {
-        encoding: 'utf8'
+        encoding: 'utf8',
     });
 
     return logOutput.split('\n')[0].trim();
@@ -246,12 +232,12 @@ function openUrl(url) {
     const platformOpenCommands = {
         darwin: ['open', [url]],
         linux: ['xdg-open', [url]],
-        win32: ['cmd', ['/c', 'start', '', url]]
+        win32: ['cmd', ['/c', 'start', '', url]],
     };
     const [command, args] = platformOpenCommands[process.platform] || platformOpenCommands.linux;
     const child = spawn(command, args, {
         detached: true,
-        stdio: 'ignore'
+        stdio: 'ignore',
     });
 
     child.on('error', error => {
@@ -263,7 +249,7 @@ function openUrl(url) {
 function question(text) {
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
     });
 
     return new Promise(resolve => {
@@ -300,7 +286,7 @@ async function main(options = {}) {
     }
 
     const defaultSourceBranch = getCurrentBranch();
-    const sourceBranch = options.sourceBranch ? options.sourceBranch : (await question(`开发分支名称${defaultSourceBranch ? `(${defaultSourceBranch})` : ''}: `) || defaultSourceBranch);
+    const sourceBranch = options.sourceBranch ? options.sourceBranch : (await question(`开发分支名称${defaultSourceBranch ? `(${defaultSourceBranch})` : ''}: `)) || defaultSourceBranch;
 
     if (!sourceBranch) {
         console.error('sourceBranch 不能为空');
@@ -316,12 +302,12 @@ async function main(options = {}) {
     const projects = [];
     const warnings = [];
 
-    for(let i = 0; i < projectList.length; i++) {
+    for (let i = 0; i < projectList.length; i++) {
         const item = projectList[i];
 
         if (!item.name) {
             if (item.projectPath) {
-                item.name = path.parse(item.projectPath).name
+                item.name = path.parse(item.projectPath).name;
             } else {
                 console.log(`项目列表 ${i + 1} 缺少 name 属性:`, item);
                 continue;
@@ -355,7 +341,7 @@ async function main(options = {}) {
         let firstCommitMsg = '';
         if (!title) {
             firstCommitMsg = getFirstCommitMsg(projectPath, sourceBranch) || sourceBranch;
-            title = await question(`合并标题(${firstCommitMsg}): `) || firstCommitMsg;
+            title = (await question(`合并标题(${firstCommitMsg}): `)) || firstCommitMsg;
         }
 
         const url = getUrl(sourceBranch, title || firstCommitMsg, item, gitlabUrl);

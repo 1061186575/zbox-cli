@@ -1,5 +1,5 @@
 const { program } = require('commander');
-const { secretQuestion } = require("../utils");
+const { secretQuestion } = require('../utils');
 const path = require('path');
 const { readFileSync } = require('fs');
 
@@ -7,16 +7,14 @@ const file = program.command('file');
 
 file.description('执行文件操作');
 
-file
-    .command('repairMediaTime <input>')
+file.command('repairMediaTime <input>')
     .description('根据图片或视频内置的拍摄时间，修复文件创建时间和更新时间')
     .option('--no-recursive', '不递归处理子目录')
     .option('-c, --concurrency <count>', '最大并发处理个数', '10')
     .action((input, options) => require('./repairMediaTime')(input, options));
 
 // 文件随机重命名工具
-file
-    .command('rr') // randomRename
+file.command('rr') // randomRename
     .description('randomRename, 对指定路径里面的所有文件进行随机重命名，并且支持还原')
     .option('-p, --path <path>', '指定操作路径')
     .option('-a, --action <action>', '指定操作 (1: rename, 2: restore)')
@@ -24,13 +22,12 @@ file
     .option('-b, --base64', '是否对文件内容进行 base64 编码/解码', false)
     .option('--ext', '是否保留文件扩展名', false)
     .action(options => {
-        const randomRename = require('./randomRename')
-        return randomRename(options.path, options.action, options.recordFileName, options.base64, options.ext)
-    })
+        const randomRename = require('./randomRename');
+        return randomRename(options.path, options.action, options.recordFileName, options.base64, options.ext);
+    });
 
 // 文件加密解密工具
-file
-    .command('en') // encrypt
+file.command('en') // encrypt
     .description('encrypt, 加密文件或目录')
     .argument('<input>', '要加密的文件或目录路径')
     .option('-o, --output <path>', '输出路径（默认：原路径 + .encrypted）')
@@ -42,7 +39,7 @@ file
         input = path.resolve(input);
         console.log('加密的文件或目录路径: ', input);
         try {
-            const key = await secretQuestion('加密密钥(输入时不显示): ')
+            const key = await secretQuestion('加密密钥(输入时不显示): ');
             const outputPath = await require('./fileEncryptor').encryptCLI(input, key, options);
             console.log(`✅ 加密完成: ${outputPath}`);
         } catch (error) {
@@ -50,8 +47,7 @@ file
             process.exitCode = 1;
         }
     });
-file
-    .command('de') // decrypt
+file.command('de') // decrypt
     .description('decrypt, 解密文件或目录')
     .argument('<input>', '要解密的文件或目录路径')
     .option('-o, --output <path>', '输出路径（默认：移除 .encrypted 后缀）')
@@ -63,7 +59,7 @@ file
         input = path.resolve(input);
         console.log('解密的文件或目录路径: ', input);
         try {
-            const key = await secretQuestion('解密密钥(输入时不显示): ')
+            const key = await secretQuestion('解密密钥(输入时不显示): ');
             const outputPath = await require('./fileEncryptor').decryptCLI(input, key, options);
             console.log(`✅ 解密完成: ${outputPath}`);
         } catch (error) {
@@ -72,10 +68,8 @@ file
         }
     });
 
-
 // 用 ffmpeg 下载 m3u8 文件
-file
-    .command('ffmpegDownloadM3u8')
+file.command('ffmpegDownloadM3u8')
     .description('用 ffmpeg 下载 m3u8 文件')
     .option('-u, --url <url>', 'index.m3u8 文件地址')
     .option('--name <name>', '指定下载的文件名称')
@@ -87,30 +81,27 @@ file
     .option('--no-copy', '不开启 -c copy', true)
     .option('--threads <threads>', '多线程下载', '4')
     .option('-p, --printInputFileTemplate', '打印 inputFile 参数对应的文件模板')
-    .action(require('./ffmpegDownloadM3u8'))
-
+    .action(require('./ffmpegDownloadM3u8'));
 
 // scp 复制文件到服务器
-file
-    .command('scp')
+file.command('scp')
     .option('-c, --config <configPath>', '指定配置文件路径', './publishConfig.js')
     .option('-g, --gitCommitCheck', '上传之前检查 git commit 状态', false)
     .option('-p, --printDemoConfig', '打印配置示例')
     .description('使用 scp 命令复制文件到服务器 1.支持增量上传 2.支持上传前检查 git 状态')
     .action(options => {
         if (options.printDemoConfig) {
-            const demoConfigPath = path.join(__dirname, './scp/demo/publishConfig.js')
+            const demoConfigPath = path.join(__dirname, './scp/demo/publishConfig.js');
             console.log('demoConfigPath', demoConfigPath);
             console.log(readFileSync(demoConfigPath, 'utf8'));
             return;
         }
-        const scpMain = require('./scp/index')
-        scpMain(options.config, options.gitCommitCheck)
-    })
+        const scpMain = require('./scp/index');
+        scpMain(options.config, options.gitCommitCheck);
+    });
 
 // 文件上传服务器
-file
-    .command('upload')
+file.command('upload')
     .description('启动文件上传服务器，支持上传文件和文件夹')
     .option('-p, --port <port>', '指定服务端口', '3000')
     .option('-d, --dir <directory>', '指定文件保存目录', process.cwd())
@@ -118,31 +109,23 @@ file
     .option('--maxTotalFileSize <size>', '总文件最大大小 (GB)', '20')
     .option('-a,--allowDownload', '显示保存目录的文件列表, 并且允许下载文件', false)
     .action(options => {
-        const uploadServer = require('./upload')
-        uploadServer(
-            options.port,
-            options.dir,
-            parseInt(options.maxFileSize),
-            parseInt(options.maxTotalFileSize),
-            options.allowDownload,
-        )
-    })
+        const uploadServer = require('./upload');
+        uploadServer(options.port, options.dir, parseInt(options.maxFileSize), parseInt(options.maxTotalFileSize), options.allowDownload);
+    });
 
 // 计算文件 MD5 值
-file
-    .command('md5 <filePaths...>')
+file.command('md5 <filePaths...>')
     .description('计算一个或多个文件的 MD5 值，支持超大文件')
-    .action(async (filePaths) => {
+    .action(async filePaths => {
         await require('../command/md5').fileMd5(filePaths);
-    })
+    });
 
 // 计算文件 SHA-256 值
-file
-    .command('sha256 <filePaths...>')
+file.command('sha256 <filePaths...>')
     .description('计算一个或多个文件的 SHA-256 值，支持超大文件')
-    .action(async (filePaths) => {
+    .action(async filePaths => {
         await require('./sha256').fileSha256(filePaths);
-    })
+    });
 
 // 文件异或加解密工具
 // file
@@ -160,8 +143,7 @@ file
 //     });
 
 // 视频合并工具
-file
-    .command('videoMerge')
+file.command('videoMerge')
     .description('合并指定目录下的所有视频文件为一个视频文件')
     .option('-d, --dir <directory>', '指定视频文件目录', process.cwd())
     .option('-s, --sort <sortBy>', '排序方式: name(文件名), ctime(创建时间), mtime(修改时间)', 'name')
@@ -169,12 +151,11 @@ file
     .option('--ffmpeg <path>', '指定 FFmpeg 可执行文件路径')
     .option('-f, --force', '强制执行，不显示确认提示', false)
     .option('--keep-video-list', '保留 video_list.txt 文件不删除', false)
-    .action(async (options) => {
+    .action(async options => {
         await require('./videoMerge')(options);
-    })
+    });
 
-file
-    .command('classify')
+file.command('classify')
     .description('把指定目录下的所有文件分类到子目录, 确保子目录文件数量和文件大小不超过指定值(方便上传备份)')
     .option('-d, --dir <directory>', '指定源目录', process.cwd())
     .option('-o, --output <directory>', '指定输出目录(默认和源目录相同)')
@@ -184,6 +165,6 @@ file
     .option('--SUB_DIR_NAME <SUB_DIR_NAME>', '子目录名称', 'dir')
     .option('--MAX_FILE_COUNT <MAX_FILE_COUNT>', '子目录最大文件数量', 500)
     .option('--MAX_TOTAL_SIZE_GB <MAX_TOTAL_SIZE_GB>', '子目录最大总大小(GB)', 4)
-    .action(async (options) => {
+    .action(async options => {
         await require('./classify')(options);
-    })
+    });

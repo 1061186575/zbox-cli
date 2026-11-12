@@ -26,21 +26,21 @@ module.exports = {
     options: [
         {
             name: 'name',
-            desc: '可选名称'
+            desc: '可选名称',
         },
         {
             name: 'token',
             desc: '必填 token',
-            required: true
+            required: true,
         },
         {
             name: 'no-cache',
-            desc: '禁用缓存'
+            desc: '禁用缓存',
         },
         {
             name: '-l, --list',
             desc: '短选项，多个参数',
-            multiple: true
-        }
-    ]
+            multiple: true,
+        },
+    ],
 };

@@ -59,5 +59,5 @@ async function fileSha256Single(filePath) {
 
 module.exports = {
     calculateFileSha256,
-    fileSha256
+    fileSha256,
 };

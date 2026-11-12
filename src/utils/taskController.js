@@ -35,7 +35,6 @@ class TaskController {
     }
 }
 
-
 // function test(maxConcurrentTasks = 1) {
 //     const controller = new TaskController(maxConcurrentTasks);
 //
@@ -60,5 +59,5 @@ class TaskController {
 // test(5)
 
 module.exports = {
-    TaskController
-}
+    TaskController,
+};

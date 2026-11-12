@@ -1,6 +1,6 @@
-const os = require("os");
-const path = require("path");
-const fs = require("fs");
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 const { program } = require('commander');
 
 // 配置文件路径
@@ -104,9 +104,7 @@ function getCommandFiles(inputPath) {
         return [];
     }
 
-    return fileList
-        .map(filename => path.join(inputPath, filename))
-        .filter(filePath => isValidCommand(filePath));
+    return fileList.map(filename => path.join(inputPath, filename)).filter(filePath => isValidCommand(filePath));
 }
 
 /**
@@ -120,17 +118,17 @@ function getCommandInfo(filePath) {
 
         if (typeof main !== 'function') {
             return {
-                error: '文件加载失败, 请导出 main 方法, 或者导出 mainName 指定 main 方法名称'
+                error: '文件加载失败, 请导出 main 方法, 或者导出 mainName 指定 main 方法名称',
             };
         }
 
         return {
             command: cmdName || getCommandName(filePath),
-            description: description || ''
+            description: description || '',
         };
     } catch (error) {
         return {
-            error: error.message
+            error: error.message,
         };
     }
 }
@@ -151,10 +149,11 @@ local
     });
 
 // local add 命令 - 添加本地命令文件或目录
-local.command('add')
+local
+    .command('add')
     .description('添加本地命令文件或目录')
     .argument('<path>', '要添加的文件或目录路径')
-    .action((inputPath) => {
+    .action(inputPath => {
         const absolutePath = path.resolve(inputPath);
 
         if (!fs.existsSync(absolutePath)) {
@@ -181,10 +180,11 @@ local.command('add')
     });
 
 // local delete 命令 - 删除本地命令文件或目录
-local.command('delete')
+local
+    .command('delete')
     .description('删除本地命令文件或目录')
     .argument('<path>', '要删除的文件或目录路径')
-    .action((inputPath) => {
+    .action(inputPath => {
         const absolutePath = path.resolve(inputPath);
         let currentPaths = getLocalCommandPaths();
 
@@ -202,7 +202,8 @@ local.command('delete')
     });
 
 // local list 命令 - 列出配置的文件和目录
-local.command('list')
+local
+    .command('list')
     .description('列出所有配置的本地命令文件和目录')
     .action(() => {
         console.log('配置文件路径:', configPath);
@@ -241,7 +242,8 @@ local.command('list')
         });
     });
 
-local.command('cmdLoadErrMsg')
+local
+    .command('cmdLoadErrMsg')
     .description('列出加载错误的本地命令文件')
     .action(() => {
         console.log(cmdLoadErrMsg);
@@ -297,7 +299,7 @@ if (localCommandDirs.length > 0) {
                 const { cmdName, description, options = [] } = module;
 
                 if (typeof main !== 'function') {
-                    cmdLoadErrMsg += `${filePath} 文件加载失败, 请导出 main 方法, 或者导出 mainName 指定 main 方法名称\n`
+                    cmdLoadErrMsg += `${filePath} 文件加载失败, 请导出 main 方法, 或者导出 mainName 指定 main 方法名称\n`;
                     return;
                 }
 

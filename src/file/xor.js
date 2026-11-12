@@ -66,7 +66,7 @@ async function getFiles(inputPath, recursive) {
         if (item.isFile()) {
             files.push(itemPath);
         } else if (item.isDirectory() && recursive) {
-            files.push(...await getFiles(itemPath, recursive));
+            files.push(...(await getFiles(itemPath, recursive)));
         }
     }
     return files;
