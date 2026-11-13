@@ -9,12 +9,13 @@ git.command('qa')
     .option('-b, --branch <branch>', '指定 qa 分支名称', 'qa')
     .option('-m, --master <master>', '指定 master 分支名称', 'master')
     .option('--noMergeMaster', '不合并 master 到当前分支', false)
-    .option('--abortOnConflict', '检测到合并冲突时放弃合并', true)
+    .option('--noAbortOnConflict', '检测到合并冲突时不执行 git merge --abort', false)
     .action(async options => {
-        let res = await require('./qaRelease')(options.branch, options.master, options.noMergeMaster, options.abortOnConflict);
-        if (res !== true) {
-            process.exit(1);
-        }
+        console.log(`options`, options);
+        // let res = await require('./qaRelease')(options);
+        // if (res !== true) {
+        //     process.exit(1);
+        // }
     });
 
 git.command('deleteBranch')
