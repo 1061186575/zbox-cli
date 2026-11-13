@@ -30,6 +30,15 @@ async function main(options) {
         return;
     }
 
+    // 先刷新目标分支, 再检查当前分支的代码是否已经包含在目标分支中
+    execSync(`git fetch origin refs/heads/${targetBranch}:refs/heads/${targetBranch} --recurse-submodules=no --progress`);
+    const ahead = execSync(`git rev-list --left-right --count refs/heads/${targetBranch}...refs/heads/${curBranch}`).toString().trim();
+    const [, aheadCount] = ahead.split('\t').map(Number);
+    if (aheadCount === 0) {
+        console.log(`当前分支 ${curBranch} 的代码已经包含在 ${targetBranch} 分支中, 无需发布`);
+        return;
+    }
+
     const mergeAbort = 'git merge --abort';
     const cmdList = [];
     const cmdMergeMaster = [
@@ -43,7 +52,6 @@ async function main(options) {
     }
 
     cmdList.push(
-        `git fetch origin refs/heads/${targetBranch}:refs/heads/${targetBranch} --recurse-submodules=no --progress`,
         `git checkout ${targetBranch}`,
         `git merge refs/heads/${curBranch}`,
         `git push origin refs/heads/${targetBranch}:${targetBranch}`,
@@ -51,12 +59,11 @@ async function main(options) {
     );
     // console.log(`cmdList`, cmdList);
 
-    for (let i = 0; i < cmdList.length; i++) {
-        let cmd = cmdList[i];
+    for (const cmd of cmdList) {
         console.log('\n' + '-'.repeat(100));
         console.log(cmd, '\n');
         try {
-            let res = await execSync(cmd);
+            let res = execSync(cmd);
             if (res.toString()) {
                 console.log(res.toString());
             }
@@ -70,7 +77,7 @@ async function main(options) {
             console.log(`命令 ${cmd} 执行失败, 请手动发布到 ${targetBranch} 分支`);
             if (cmd.startsWith('git merge ')) {
                 if (!noAbortOnConflict) {
-                    await execSync(mergeAbort);
+                    execSync(mergeAbort);
                     console.log(`已执行: ${mergeAbort}`);
                 }
                 console.log('检测到存在合并冲突, 请先手动解决冲突');

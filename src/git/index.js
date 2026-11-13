@@ -11,11 +11,10 @@ git.command('qa')
     .option('--noMergeMaster', '不合并 master 到当前分支', false)
     .option('--noAbortOnConflict', '检测到合并冲突时不执行 git merge --abort', false)
     .action(async options => {
-        console.log(`options`, options);
-        // let res = await require('./qaRelease')(options);
-        // if (res !== true) {
-        //     process.exit(1);
-        // }
+        const res = await require('./qaRelease')(options);
+        if (res !== true) {
+            process.exit(1);
+        }
     });
 
 git.command('deleteBranch')
