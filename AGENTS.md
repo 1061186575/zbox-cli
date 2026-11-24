@@ -11,6 +11,7 @@ zbox-cli is a comprehensive command-line utility package that provides tools for
 ### Testing
 - `npm test` - Run all Jest tests
 - `npm run test:watch` - Run tests in watch mode
+- `npm test -- --runInBand test/utils/index.test.js` - Run a specific test file
 
 ### Code Quality
 - `npm run lint` - Lint JavaScript files using ESLint
@@ -19,10 +20,6 @@ zbox-cli is a comprehensive command-line utility package that provides tools for
 
 ### Publishing
 - `npm run release` - Run tests and publish to npm
-
-### Local Development
-- `npm link` - Link package globally for local testing
-- `zbox --help` - Test CLI after linking
 
 ## Architecture
 
